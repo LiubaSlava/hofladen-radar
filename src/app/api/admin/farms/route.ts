@@ -1,0 +1,162 @@
+import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
+import { mapSupabaseFarmRow, type SupabaseFarmRow } from "@/lib/farms-mapper"
+
+const ADMIN_AUTH_HEADER = "x-admin-auth"
+const ADMIN_AUTH_VALUE = "Gloryadmin:Glory27041958"
+
+const FARMS_SELECT =
+  "id,created_at,name,address,latitude,longitude,products,has_shop,has_parking,has_restaurant,has_accommodation,has_playground,has_quiz,has_delivery,is_open,ai_message_de,ai_message_en,ai_message_fr,ai_message_it,ai_message_sr,ai_message_ua,status,rating,image_url,website_url,category,contact_info,opening_hours"
+
+type FarmPayload = {
+  id?: string
+  name: string
+  address?: string
+  latitude: number
+  longitude: number
+  products?: string[]
+  has_shop?: boolean
+  has_parking?: boolean
+  has_restaurant?: boolean
+  has_accommodation?: boolean
+  has_playground?: boolean
+  has_quiz?: boolean
+  has_delivery?: boolean
+  is_open?: boolean
+  ai_message_de?: string
+  ai_message_en?: string
+  ai_message_fr?: string
+  ai_message_it?: string
+  ai_message_sr?: string
+  ai_message_ua?: string
+  status?: string
+  rating?: number
+  image_url?: string
+  website_url?: string
+  contact_info?: unknown
+  opening_hours?: unknown
+  category?: "farm" | "shop" | "attraction"
+}
+
+function parseJsonMaybe(value: unknown): unknown {
+  if (typeof value !== "string") return value ?? null
+  const trimmed = value.trim()
+  if (trimmed.length === 0) return null
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return null
+  }
+}
+
+function toNumberSafe(value: unknown): number {
+  if (typeof value === "number") return value
+  if (typeof value !== "string") return Number.NaN
+  const parsed = Number(value.trim().replace(",", "."))
+  return Number.isFinite(parsed) ? parsed : Number.NaN
+}
+
+function normalizePayload(raw: Record<string, unknown>, isCreate: boolean): FarmPayload {
+  const categoryRaw = String(raw.category ?? "farm")
+  const category = categoryRaw === "shop" || categoryRaw === "attraction" ? categoryRaw : "farm"
+  const products = Array.isArray(raw.products)
+    ? raw.products.filter((x): x is string => typeof x === "string")
+    : []
+
+  return {
+    id: typeof raw.id === "string" && raw.id.length > 0 ? raw.id : isCreate ? crypto.randomUUID() : undefined,
+    name: String(raw.name ?? "").trim(),
+    address: String(raw.address ?? "").trim(),
+    latitude: toNumberSafe(raw.latitude),
+    longitude: toNumberSafe(raw.longitude),
+    products,
+    has_shop: Boolean(raw.has_shop),
+    has_parking: Boolean(raw.has_parking),
+    has_restaurant: Boolean(raw.has_restaurant),
+    has_accommodation: Boolean(raw.has_accommodation),
+    has_playground: Boolean(raw.has_playground),
+    has_quiz: Boolean(raw.has_quiz),
+    has_delivery: Boolean(raw.has_delivery),
+    is_open: Boolean(raw.is_open),
+    ai_message_de: String(raw.ai_message_de ?? ""),
+    ai_message_en: String(raw.ai_message_en ?? ""),
+    ai_message_fr: String(raw.ai_message_fr ?? ""),
+    ai_message_it: String(raw.ai_message_it ?? ""),
+    ai_message_sr: String(raw.ai_message_sr ?? ""),
+    ai_message_ua: String(raw.ai_message_ua ?? ""),
+    status: String(raw.status ?? "active"),
+    rating: Number.isFinite(toNumberSafe(raw.rating)) ? toNumberSafe(raw.rating) : 0,
+    image_url: String(raw.image_url ?? ""),
+    website_url: String(raw.website_url ?? ""),
+    contact_info: parseJsonMaybe(raw.contact_info),
+    opening_hours: parseJsonMaybe(raw.opening_hours),
+    category,
+  }
+}
+
+function isAdminAuthorized(request: Request): boolean {
+  return request.headers.get(ADMIN_AUTH_HEADER) === ADMIN_AUTH_VALUE
+}
+
+export async function POST(request: Request) {
+  if (!isAdminAuthorized(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  const supabase = createSupabaseAdminServer()
+  if (!supabase) return Response.json({ error: "Supabase admin client not configured" }, { status: 500 })
+
+  const body = (await request.json()) as Record<string, unknown>
+  const payload = normalizePayload(body, true)
+  if (!payload.name || !Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) {
+    return Response.json({ error: "Invalid payload" }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from("farms")
+    .insert(payload)
+    .select(FARMS_SELECT)
+    .single<SupabaseFarmRow>()
+
+  if (error || !data) return Response.json({ error: error?.message ?? "Insert failed" }, { status: 400 })
+  return Response.json({ farm: mapSupabaseFarmRow(data) })
+}
+
+export async function PUT(request: Request) {
+  if (!isAdminAuthorized(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  const supabase = createSupabaseAdminServer()
+  if (!supabase) return Response.json({ error: "Supabase admin client not configured" }, { status: 500 })
+
+  const body = (await request.json()) as Record<string, unknown>
+  const payload = normalizePayload(body, false)
+  if (!payload.id || !payload.name || !Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) {
+    return Response.json({ error: "Invalid payload" }, { status: 400 })
+  }
+
+  const { id, ...rest } = payload
+  const { data, error } = await supabase
+    .from("farms")
+    .update(rest)
+    .eq("id", id)
+    .select(FARMS_SELECT)
+    .single<SupabaseFarmRow>()
+
+  if (error || !data) return Response.json({ error: error?.message ?? "Update failed" }, { status: 400 })
+  return Response.json({ farm: mapSupabaseFarmRow(data) })
+}
+
+export async function DELETE(request: Request) {
+  if (!isAdminAuthorized(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  const supabase = createSupabaseAdminServer()
+  if (!supabase) return Response.json({ error: "Supabase admin client not configured" }, { status: 500 })
+
+  const body = (await request.json()) as { id?: string }
+  const id = typeof body.id === "string" ? body.id.trim() : ""
+  if (!id) return Response.json({ error: "Invalid payload" }, { status: 400 })
+
+  const { error } = await supabase.from("farms").delete().eq("id", id)
+  if (error) return Response.json({ error: error.message ?? "Delete failed" }, { status: 400 })
+  return Response.json({ ok: true, id })
+}
