@@ -344,6 +344,7 @@ export function FarmMap({
         zoomControl={false}
         zoomSnap={0.25}
         zoomDelta={0.25}
+        preferCanvas
         whenReady={(event) => {
           if (mapRef.current && mapRef.current !== event.target) {
             safelyDisposeMap(mapRef.current)
@@ -362,6 +363,12 @@ export function FarmMap({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+          keepBuffer={6}
+          updateWhenIdle={false}
+          updateWhenZooming={false}
+          updateInterval={120}
+          crossOrigin
         />
         {farms.map((farm) => (
           <Marker

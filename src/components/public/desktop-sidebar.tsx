@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { Search, Map, List, Radar, Shield, Smartphone } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
@@ -240,13 +241,20 @@ export function DesktopSidebar({
 
   return (
     <aside
-      className="notranslate pointer-events-auto fixed left-4 top-4 z-40 hidden h-[calc(100vh-2rem)] w-[340px] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card/75 shadow-2xl backdrop-blur-2xl md:flex"
+      className="notranslate pointer-events-auto fixed left-4 top-4 z-40 hidden h-[calc(100vh-2rem)] w-[340px] flex-col overflow-hidden rounded-3xl border border-border/60 bg-card/75 shadow-2xl backdrop-blur-2xl lg:flex"
       translate="no"
     >
       {/* Header */}
       <div className="flex items-start gap-3 border-b border-border/50 px-6 py-5">
-        <div className="-mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-          <Radar className="h-5 w-5 text-primary" />
+        <div className="-mt-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
+          <Image
+            src="/logo.png"
+            alt="Hofladen Radar"
+            width={80}
+            height={80}
+            className="h-full w-full object-contain"
+            priority
+          />
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-semibold leading-none tracking-tight text-foreground">Hofladen Radar</h1>

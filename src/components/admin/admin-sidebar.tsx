@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import {
   LayoutDashboard,
   Store,
@@ -8,7 +9,6 @@ import {
   Users,
   Settings,
   ChevronLeft,
-  Radar,
   MessageSquareText,
   Smartphone,
 } from "lucide-react"
@@ -39,8 +39,15 @@ export function AdminSidebar({ active, onChange }: AdminSidebarProps) {
     >
       {/* Brand */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-          <Radar className="h-4 w-4 text-primary" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10">
+          <Image
+            src="/logo.png"
+            alt="Hofladen Radar"
+            width={72}
+            height={72}
+            className="h-full w-full object-contain"
+            priority
+          />
         </div>
         {!collapsed && (
           <div className="flex-1 overflow-hidden">

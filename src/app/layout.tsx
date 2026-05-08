@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Hofladen Radar — Найди фермерские продукты рядом',
-  description: 'Интерактивная карта фермерских магазинов и рынков. Свежие продукты от местных фермеров: молоко, мясо, овощи, фрукты.',
+  title: 'Hofladen Radar — Hofläden und Bauernhöfe in deiner Nähe finden',
+  description: 'Interaktive Karte mit Hofläden, Bauernhöfen und Bauernmärkten in der Schweiz. Frische Produkte direkt vom Hof: Milch, Käse, Eier, Fleisch, Obst, Gemüse, Honig und Kräuter.',
   generator: 'v0.app',
   icons: {
     icon: [

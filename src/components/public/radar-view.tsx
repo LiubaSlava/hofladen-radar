@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Image from "next/image"
 import { FarmMap } from "@/components/farm-map"
 import { DesktopSidebar } from "@/components/public/desktop-sidebar"
 import { MobileBar } from "@/components/public/mobile-bar"
@@ -110,8 +111,8 @@ export function RadarView({ farms }: RadarViewProps) {
         aria-hidden="true"
       />
 
-      {/* Desktop distance pill (MobileBar is md:hidden, so this keeps km visible on wide screens too) */}
-      <div className="pointer-events-none fixed left-1/2 top-3 z-30 hidden -translate-x-1/2 md:block">
+      {/* Desktop distance pill (MobileBar is lg:hidden, so this keeps km visible on wide screens too) */}
+      <div className="pointer-events-none fixed left-1/2 top-3 z-30 hidden -translate-x-1/2 lg:block">
         <div
           className="notranslate rounded-full bg-card/90 px-3 py-1 text-xs font-semibold tabular-nums text-foreground shadow-lg backdrop-blur border border-border/70"
           translate="no"
@@ -158,7 +159,7 @@ export function RadarView({ farms }: RadarViewProps) {
 
       {/* Desktop list-mode overlay (only when no detail open) */}
       {viewMode === "list" && !selectedFarm && (
-        <div className="pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border/60 bg-card/85 p-6 shadow-2xl backdrop-blur-2xl md:block">
+        <div className="pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border/60 bg-card/85 p-6 shadow-2xl backdrop-blur-2xl lg:block">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
             Höfe in der Nähe
           </h2>
@@ -209,11 +210,21 @@ export function RadarView({ farms }: RadarViewProps) {
 
       {/* Footer signature */}
       <footer
-        className="notranslate pointer-events-none fixed bottom-2 left-2 z-20 text-left text-[10px] leading-tight text-gray-500 md:left-1/2 md:-translate-x-1/2 md:text-center md:text-xs"
+        className="notranslate pointer-events-none fixed bottom-2 left-2 z-20 flex items-center gap-1.5 text-left text-[10px] leading-tight text-gray-500 lg:left-1/2 lg:-translate-x-1/2 lg:text-center lg:text-xs"
         translate="no"
       >
-        <p>Entwickelt von AXON CREATIVE CH</p>
-        <p>Made in Switzerland 🇨🇭</p>
+        <Image
+          src="/logo.png"
+          alt=""
+          aria-hidden
+          width={24}
+          height={24}
+          className="h-4 w-4 shrink-0 object-contain lg:h-5 lg:w-5"
+        />
+        <div>
+          <p>Entwickelt von AXON CREATIVE CH</p>
+          <p>Made in Switzerland 🇨🇭</p>
+        </div>
       </footer>
     </div>
   )
