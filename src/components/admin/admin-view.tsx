@@ -8,6 +8,7 @@ import { FarmModal } from "@/components/admin/farm-modal"
 import type { Farm } from "@/lib/data"
 import { ReviewsTable, type AdminReview } from "@/components/admin/reviews-table"
 import { ReviewModal } from "@/components/admin/review-modal"
+import { AiSummaryPanel, type AiSummaryFormData } from "@/components/admin/ai-summary-panel"
 import { getLatestAppApkUrl } from "@/lib/app-download"
 
 type FarmFormData = {
@@ -68,6 +69,7 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
   const [appUploadProgress, setAppUploadProgress] = useState(0)
   const [appUploadBusy, setAppUploadBusy] = useState(false)
   const [appUploadMessage, setAppUploadMessage] = useState("")
+  const [aiSummarySavingId, setAiSummarySavingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (activeNav !== "kommentare") return
@@ -187,6 +189,14 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
       }),
     [farms, search, categoryFilter],
   )
+  const aiSummaryFiltered = useMemo(
+    () =>
+      farms.filter((f) => {
+        const needle = search.toLowerCase()
+        return f.name.toLowerCase().includes(needle) || f.address.toLowerCase().includes(needle)
+      }),
+    [farms, search],
+  )
 
   const categoryStats = useMemo(() => {
     const farm = farms.filter((f) => f.category === "farm").length
@@ -285,6 +295,58 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
     setModalOpen(false)
   }
 
+  const saveAiSummary = async (data: AiSummaryFormData) => {
+    const adminAuth = getAdminAuthHeader()
+    setAiSummarySavingId(data.id)
+    try {
+      const response = await fetch("/api/admin/farms/ai-summary", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-auth": adminAuth },
+        body: JSON.stringify({
+          id: data.id,
+          content: data.content,
+        }),
+      })
+      const result = (await response.json()) as { farm?: Farm; error?: string }
+      if (!response.ok || !result.farm) {
+        console.error("Save AI summary failed:", result.error ?? "unknown")
+        window.alert(`Speichern fehlgeschlagen: ${result.error ?? "Unbekannter Fehler"}`)
+        return
+      }
+      setFarms((prev) => prev.map((farm) => (farm.id === result.farm!.id ? result.farm! : farm)))
+    } finally {
+      setAiSummarySavingId(null)
+    }
+  }
+
+  const headerCopy = useMemo(() => {
+    if (activeNav === "ki-ueberblick") {
+      return {
+        eyebrow: "KI-Verwaltung",
+        title: "KI-Überblick",
+        searchPlaceholder: "Hofladen suchen…",
+        showSearch: true,
+        showCreate: false,
+      }
+    }
+    if (activeNav === "hofladen") {
+      return {
+        eyebrow: "Verwaltung",
+        title: "Hofladen Management",
+        searchPlaceholder: "Suchen…",
+        showSearch: true,
+        showCreate: true,
+      }
+    }
+    return {
+      eyebrow: "Verwaltung",
+      title: "Hofladen Management",
+      searchPlaceholder: "Suchen…",
+      showSearch: false,
+      showCreate: false,
+    }
+  }, [activeNav])
+
   return (
     <div className="flex h-screen w-full bg-secondary text-foreground">
       <AdminSidebar active={activeNav} onChange={setActiveNav} />
@@ -295,31 +357,35 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Verwaltung
+                {headerCopy.eyebrow}
               </p>
               <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-                Hofladen Management
+                {headerCopy.title}
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Suchen…"
-                  className="h-10 w-56 rounded-full border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <button
-                onClick={openCreate}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Neuen Hofladen hinzufügen</span>
-                <span className="sm:hidden">Neu</span>
-              </button>
+              {headerCopy.showSearch ? (
+                <div className="relative hidden sm:block">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={headerCopy.searchPlaceholder}
+                    className="h-10 w-56 rounded-full border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              ) : null}
+              {headerCopy.showCreate ? (
+                <button
+                  onClick={openCreate}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Neuen Hofladen hinzufügen</span>
+                  <span className="sm:hidden">Neu</span>
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -342,6 +408,13 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
                 onDelete={deleteReview}
               />
             </>
+          ) : activeNav === "ki-ueberblick" ? (
+            <AiSummaryPanel
+              farms={aiSummaryFiltered}
+              totalCount={farms.length}
+              savingId={aiSummarySavingId}
+              onSave={saveAiSummary}
+            />
           ) : activeNav === "app-verwaltung" ? (
             <div className="max-w-xl rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center gap-2">

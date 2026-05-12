@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Search, Map, List, Radar, Shield, Smartphone } from "lucide-react"
+import { Search, Map, List, Radar, Shield, Smartphone, Mail } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
@@ -245,7 +245,7 @@ export function DesktopSidebar({
       translate="no"
     >
       {/* Header */}
-      <div className="flex items-start gap-3 border-b border-border/50 px-6 py-5">
+      <div className="flex items-start gap-3 border-b border-border/50 px-6 py-4">
         <div className="-mt-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
           <Image
             src="/logo.png"
@@ -259,35 +259,41 @@ export function DesktopSidebar({
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-semibold leading-none tracking-tight text-foreground">Hofladen Radar</h1>
           <p className="text-xs text-muted-foreground">{t.subtitle}</p>
-          <div className="mt-3">
+          <div className="mt-2">
             <LanguageSwitcher value={locale} />
           </div>
-          <div className="mt-2 flex flex-col items-start gap-1">
+          <div className="mt-1.5 flex items-center gap-1.5">
             <a
               href="/datenschutz"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+              aria-label="Datenschutz"
+              title="Datenschutz"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/40 text-muted-foreground transition-all hover:border-border hover:bg-background/70 hover:text-foreground"
             >
               <Shield className="h-3.5 w-3.5" />
-              Datenschutz
             </a>
             <button
               type="button"
               disabled
               title="Bald verfügbar"
-              className="inline-flex cursor-not-allowed items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground/70 opacity-80"
+              aria-label="Android App herunterladen"
+              className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-border/60 bg-background/40 text-muted-foreground/70 opacity-80"
             >
               <Smartphone className="h-3.5 w-3.5" />
-              Android App herunterladen
             </button>
-            <EarlyAccessButton />
+            <EarlyAccessButton
+              className="h-8 w-8 justify-center px-0"
+              triggerContent={<Mail className="h-3.5 w-3.5" />}
+              ariaLabel="Früher Zugang"
+              title="Früher Zugang"
+            />
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="px-6 pt-5">
+      <div className="px-6 pt-3">
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -301,7 +307,7 @@ export function DesktopSidebar({
       </div>
 
       {/* Höfe / Läden — filtert nach DB-Spalte `category` (`farm` | `shop`) */}
-      <div className="notranslate px-6 pt-5" translate="no">
+      <div className="notranslate px-6 pt-4" translate="no">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.venuesTitle}</h2>
         <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
           {t.venuesHint}
@@ -341,7 +347,7 @@ export function DesktopSidebar({
       </div>
 
       {/* Categories — notranslate: Auto-Translate wraps labels in <font> and breaks hydration */}
-      <div className="notranslate px-6 pt-5" translate="no">
+      <div className="notranslate px-6 pt-4" translate="no">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.categories}</h2>
         <div className="mt-3 grid grid-cols-5 gap-2">
           {CATEGORIES.map((cat) => {
@@ -366,7 +372,7 @@ export function DesktopSidebar({
       </div>
 
       {/* Nur geöffnet — lokaler Filter (client state in RadarView) */}
-      <div className="notranslate px-6 pt-5" translate="no">
+      <div className="notranslate px-6 pt-4" translate="no">
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/40 px-3.5 py-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold text-foreground">{t.onlyOpenTitle}</p>
@@ -383,7 +389,7 @@ export function DesktopSidebar({
       </div>
 
       {/* Distance slider — notranslate: page auto-translate must not replace this subtree or the km label stops updating */}
-      <div className="notranslate px-6 pt-6" translate="no">
+      <div className="notranslate px-6 pt-4" translate="no">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.distance}</h2>
           <span className="tabular-nums text-xs font-medium text-foreground">
@@ -409,7 +415,7 @@ export function DesktopSidebar({
       </div>
 
       {/* View toggle */}
-      <div className="notranslate px-6 pt-6" translate="no">
+      <div className="notranslate px-6 pt-4" translate="no">
         <div className="flex rounded-2xl border border-border/60 bg-background/40 p-1">
           <button
             onClick={() => onViewModeChange("map")}
@@ -433,7 +439,7 @@ export function DesktopSidebar({
       </div>
 
       {/* Farms list */}
-      <div className="mt-6 flex-1 overflow-y-auto px-6 pb-6">
+      <div className="mt-4 flex-1 overflow-y-auto px-6 pb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.nearby}</h2>
           <span className="text-xs text-muted-foreground">{farms.length} {t.farmsCount}</span>

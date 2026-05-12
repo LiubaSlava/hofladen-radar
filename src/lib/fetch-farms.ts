@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Farm } from "@/lib/data"
-import { mapSupabaseFarmRow, type SupabaseFarmRow } from "@/lib/farms-mapper"
+import type { SupabaseFarmRow } from "@/lib/farms-mapper"
+import { mapFarmRowsWithKiUeberblick } from "@/lib/ki-ueberblick"
 
 const FARMS_SELECT =
   "id,created_at,name,address,latitude,longitude,products,has_shop,has_parking,has_restaurant,has_accommodation,has_playground,has_quiz,has_delivery,is_open,ai_message_de,ai_message_en,ai_message_fr,ai_message_it,ai_message_sr,ai_message_ua,status,rating,image_url,website_url,category,contact_info,opening_hours"
@@ -20,5 +21,5 @@ export async function fetchFarmsFromSupabase(supabase: SupabaseClient | null): P
     return []
   }
 
-  return data.map(mapSupabaseFarmRow)
+  return mapFarmRowsWithKiUeberblick(supabase, data)
 }

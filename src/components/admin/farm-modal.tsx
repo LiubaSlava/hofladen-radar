@@ -139,6 +139,8 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
     sun: false,
   })
   const [helpersInitialized, setHelpersInitialized] = useState(false)
+  const [allDaysOpen, setAllDaysOpen] = useState("")
+  const [allDaysClose, setAllDaysClose] = useState("")
 
   useEffect(() => {
     const contact = safeParseObject(contactInfo)
@@ -209,6 +211,35 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
       setStock(next)
       return next
     })
+  }
+  const applyHoursToAllDays = () => {
+    setDayOpen(
+      DAY_KEYS.reduce(
+        (acc, key) => {
+          acc[key] = allDaysOpen
+          return acc
+        },
+        {} as Record<DayKey, string>,
+      ),
+    )
+    setDayClose(
+      DAY_KEYS.reduce(
+        (acc, key) => {
+          acc[key] = allDaysClose
+          return acc
+        },
+        {} as Record<DayKey, string>,
+      ),
+    )
+    setDayClosed(
+      DAY_KEYS.reduce(
+        (acc, key) => {
+          acc[key] = false
+          return acc
+        },
+        {} as Record<DayKey, boolean>,
+      ),
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -340,30 +371,6 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
             </div>
           </div>
 
-          {/* Hours */}
-          <div className="mt-4 space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Öffnungszeiten
-            </label>
-            <input
-              type="text"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              placeholder="Mo–Fr 8–18, Sa 8–14"
-              className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            <div className="mt-2 grid grid-cols-7 gap-1.5">
-              {DAYS.map((day) => (
-                <div
-                  key={day}
-                  className="rounded-xl border border-border bg-background py-1.5 text-center text-[10px] font-medium text-muted-foreground"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Website (simple input) */}
           <div className="mt-4 space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -466,6 +473,10 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
 
             <div className="mt-3 rounded-2xl border border-border/70 bg-background p-3">
               <p className="text-xs font-semibold text-foreground">Einfache Öffnungszeiten</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Pro Tag nur Start und Ende eintragen. Wenn alle Tage gleich sind, einmal unten
+                eintragen und auf alle Tage anwenden.
+              </p>
               <div className="mt-2 flex items-center justify-between rounded-xl border border-border bg-background/60 px-3 py-2">
                 <div>
                   <p className="text-[11px] font-medium text-foreground">Aktueller Öffnungsstatus</p>
@@ -484,12 +495,45 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
                   {isOpen ? "Offen" : "Geschlossen"}
                 </button>
               </div>
+              <div className="mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border bg-background/60 p-3 md:grid-cols-[1fr,1fr,auto]">
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground">Alle Tage offen ab</label>
+                  <input
+                    type="time"
+                    name="all-days-open"
+                    aria-label="Alle Tage offen ab"
+                    value={allDaysOpen}
+                    onChange={(e) => setAllDaysOpen(e.target.value)}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground">Alle Tage offen bis</label>
+                  <input
+                    type="time"
+                    name="all-days-close"
+                    aria-label="Alle Tage offen bis"
+                    value={allDaysClose}
+                    onChange={(e) => setAllDaysClose(e.target.value)}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs text-foreground"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={applyHoursToAllDays}
+                  className="h-9 rounded-lg border border-border bg-background px-3 text-[11px] font-medium text-foreground md:mt-5"
+                >
+                  Auf alle Tage anwenden
+                </button>
+              </div>
               <div className="mt-2 space-y-2">
                 {DAY_KEYS.map((key, idx) => (
                   <div key={key} className="grid grid-cols-[42px,1fr,1fr,76px] items-center gap-2">
                     <span className="text-[11px] font-medium text-muted-foreground">{DAYS[idx]}</span>
                     <input
                       type="time"
+                      name={`${key}-open`}
+                      aria-label={`${DAYS[idx]} offen ab`}
                       value={dayOpen[key]}
                       onChange={(e) => setDayOpen((prev) => ({ ...prev, [key]: e.target.value }))}
                       disabled={dayClosed[key]}
@@ -497,6 +541,8 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
                     />
                     <input
                       type="time"
+                      name={`${key}-close`}
+                      aria-label={`${DAYS[idx]} offen bis`}
                       value={dayClose[key]}
                       onChange={(e) => setDayClose((prev) => ({ ...prev, [key]: e.target.value }))}
                       disabled={dayClosed[key]}
@@ -505,6 +551,7 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
                     <button
                       type="button"
                       onClick={() => setDayClosed((prev) => ({ ...prev, [key]: !prev[key] }))}
+                      aria-label={`${DAYS[idx]} ${dayClosed[key] ? "als offen markieren" : "als geschlossen markieren"}`}
                       className={`h-9 rounded-lg border px-2 text-[10px] font-medium ${
                         dayClosed[key] ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground"
                       }`}
@@ -632,15 +679,20 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="mt-3">
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground">contact_info (jsonb)</label>
                 <textarea value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} className="mt-1 h-20 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground font-mono" />
               </div>
-              <div>
-                <label className="text-[10px] font-medium text-muted-foreground">opening_hours (jsonb)</label>
-                <textarea value={openingHours} onChange={(e) => setOpeningHours(e.target.value)} className="mt-1 h-20 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground font-mono" />
-              </div>
+              <details className="mt-3 rounded-2xl border border-border/70 bg-background">
+                <summary className="cursor-pointer list-none px-3 py-2 text-[10px] font-medium text-muted-foreground">
+                  Technisches Feld: opening_hours (jsonb)
+                </summary>
+                <div className="border-t border-border/70 p-3">
+                  <label className="text-[10px] font-medium text-muted-foreground">opening_hours (jsonb)</label>
+                  <textarea value={openingHours} onChange={(e) => setOpeningHours(e.target.value)} className="mt-1 h-20 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground font-mono" />
+                </div>
+              </details>
             </div>
           </div>
 

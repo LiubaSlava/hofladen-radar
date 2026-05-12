@@ -43,7 +43,8 @@ const ACTION_ITEMS = [
   { key: "share", label: "Teilen", icon: Share2 },
 ] as const
 
-const ATTRACTIONS_RADIUS_KM = 15
+// Nearby attractions are meant to be a short walking add-on around the farm.
+const ATTRACTIONS_RADIUS_KM = 1
 
 const LOCAL_FEATURE_LABELS: Record<
   AppLocale,
@@ -249,23 +250,27 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
   }, [contactInfo.email, contactInfo.phone, contactInfo.tel])
   const localizedDescription = useMemo(() => {
     const byLocale: Record<AppLocale, string | undefined> = {
-      de: farm.ai_message_de,
-      en: farm.ai_message_en,
-      fr: farm.ai_message_fr,
-      it: farm.ai_message_it,
-      uk: farm.ai_message_ua,
+      de: farm.ai_message_de?.trim(),
+      en: farm.ai_message_en?.trim(),
+      fr: farm.ai_message_fr?.trim(),
+      it: farm.ai_message_it?.trim(),
+      uk: farm.ai_message_ua?.trim(),
     }
     return (
       byLocale[locale] ||
-      farm.ai_message_de ||
-      farm.ai_message_en ||
-      farm.ai_message_fr ||
-      farm.ai_message_it ||
-      farm.ai_message_ua ||
-      farm.ai_message_sr ||
-      farm.description
+      farm.ai_message_de?.trim() ||
+      farm.ai_message_en?.trim() ||
+      farm.ai_message_fr?.trim() ||
+      farm.ai_message_it?.trim() ||
+      farm.ai_message_ua?.trim() ||
+      farm.ai_message_sr?.trim() ||
+      farm.description?.trim() ||
+      (farm.address
+        ? `${farm.name} in ${farm.address}. Weitere Informationen folgen.`
+        : `${farm.name}. Weitere Informationen folgen.`)
     )
   }, [
+    farm.address,
     farm.ai_message_de,
     farm.ai_message_en,
     farm.ai_message_fr,
@@ -273,7 +278,28 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
     farm.ai_message_sr,
     farm.ai_message_ua,
     farm.description,
+    farm.name,
     locale,
+  ])
+  const localizedAiSummary = useMemo(() => {
+    return (
+      farm.ai_summary_content?.trim() ||
+      farm.ai_summary_de?.trim() ||
+      farm.ai_summary_en?.trim() ||
+      farm.ai_summary_fr?.trim() ||
+      farm.ai_summary_it?.trim() ||
+      farm.ai_summary_ua?.trim() ||
+      farm.ai_summary_sr?.trim() ||
+      ""
+    )
+  }, [
+    farm.ai_summary_content,
+    farm.ai_summary_de,
+    farm.ai_summary_en,
+    farm.ai_summary_fr,
+    farm.ai_summary_it,
+    farm.ai_summary_sr,
+    farm.ai_summary_ua,
   ])
 
   const nearbyAttractions = allPoints
@@ -515,13 +541,15 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
                 </span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                {t.aiHint}
+                {localizedAiSummary || t.aiHint}
               </p>
-              <div className="mt-3 flex items-center gap-1">
-                <div className="h-1 w-12 animate-pulse rounded-full bg-purple-400/60" />
-                <div className="h-1 w-8 animate-pulse rounded-full bg-blue-400/60 [animation-delay:120ms]" />
-                <div className="h-1 w-5 animate-pulse rounded-full bg-emerald-400/60 [animation-delay:240ms]" />
-              </div>
+              {!localizedAiSummary ? (
+                <div className="mt-3 flex items-center gap-1">
+                  <div className="h-1 w-12 animate-pulse rounded-full bg-purple-400/60" />
+                  <div className="h-1 w-8 animate-pulse rounded-full bg-blue-400/60 [animation-delay:120ms]" />
+                  <div className="h-1 w-5 animate-pulse rounded-full bg-emerald-400/60 [animation-delay:240ms]" />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

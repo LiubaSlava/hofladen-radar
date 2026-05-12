@@ -86,6 +86,13 @@ export interface Farm {
   ai_message_it?: string
   ai_message_sr?: string
   ai_message_ua?: string
+  ai_summary_content?: string
+  ai_summary_de?: string
+  ai_summary_en?: string
+  ai_summary_fr?: string
+  ai_summary_it?: string
+  ai_summary_sr?: string
+  ai_summary_ua?: string
   has_shop?: boolean
   has_parking?: boolean
   has_restaurant?: boolean

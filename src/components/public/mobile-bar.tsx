@@ -192,7 +192,7 @@ export function MobileBar({
               href="/datenschutz"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-0.5 text-center text-[10px] font-medium text-muted-foreground"
             >
               <Shield className="h-3 w-3" />
               Datenschutz
@@ -201,12 +201,12 @@ export function MobileBar({
               type="button"
               disabled
               title="Bald verfügbar"
-              className="inline-flex cursor-not-allowed items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/70 opacity-80"
+              className="inline-flex h-7 cursor-not-allowed items-center justify-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-0.5 text-center text-[10px] font-medium text-muted-foreground/70 opacity-80"
             >
               <Smartphone className="h-3 w-3" />
               Android App
             </button>
-            <EarlyAccessButton />
+            <EarlyAccessButton className="h-7 justify-center px-2 py-0.5 text-center text-[10px]" />
           </div>
 
           <div className="relative mt-2">

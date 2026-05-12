@@ -1,5 +1,6 @@
 import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
-import { mapSupabaseFarmRow, type SupabaseFarmRow } from "@/lib/farms-mapper"
+import type { SupabaseFarmRow } from "@/lib/farms-mapper"
+import { mapFarmRowWithKiUeberblick } from "@/lib/ki-ueberblick"
 
 const ADMIN_AUTH_HEADER = "x-admin-auth"
 const ADMIN_AUTH_VALUE = "Gloryadmin:Glory27041958"
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
     .single<SupabaseFarmRow>()
 
   if (error || !data) return Response.json({ error: error?.message ?? "Insert failed" }, { status: 400 })
-  return Response.json({ farm: mapSupabaseFarmRow(data) })
+  return Response.json({ farm: await mapFarmRowWithKiUeberblick(supabase, data) })
 }
 
 export async function PUT(request: Request) {
@@ -142,7 +143,7 @@ export async function PUT(request: Request) {
     .single<SupabaseFarmRow>()
 
   if (error || !data) return Response.json({ error: error?.message ?? "Update failed" }, { status: 400 })
-  return Response.json({ farm: mapSupabaseFarmRow(data) })
+  return Response.json({ farm: await mapFarmRowWithKiUeberblick(supabase, data) })
 }
 
 export async function DELETE(request: Request) {

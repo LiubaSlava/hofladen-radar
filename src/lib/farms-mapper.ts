@@ -181,17 +181,16 @@ function normalizeFarmImageUrl(raw: string | null | undefined): string {
   return value
 }
 
+function buildGermanFallbackDescription(row: SupabaseFarmRow): string {
+  const name = row.name.trim() || "Dieser Hof"
+  const address = row.address.trim()
+  return address ? `${name} in ${address}. Weitere Informationen folgen.` : `${name}. Weitere Informationen folgen.`
+}
+
 function pickDescription(row: SupabaseFarmRow): string {
-  return (
-    row.ai_message_de ??
-    row.ai_message_en ??
-    row.ai_message_fr ??
-    row.ai_message_it ??
-    // Prefer Ukrainian over Serbian/Cyrillic fallback.
-    row.ai_message_ua ??
-    row.ai_message_sr ??
-    ""
-  )
+  const germanDescription = row.ai_message_de?.trim()
+  if (germanDescription) return germanDescription
+  return buildGermanFallbackDescription(row)
 }
 
 function toCoordinate(value: number | string, fallback: number): number {

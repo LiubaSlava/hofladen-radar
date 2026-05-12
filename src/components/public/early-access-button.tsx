@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 
 type FormLocale = "de" | "en" | "it" | "uk" | "fr"
 
@@ -71,7 +71,19 @@ const COPY: Record<
 
 const TARGET_EMAIL = "axoncreative.ch@gmail.com"
 
-export function EarlyAccessButton() {
+interface EarlyAccessButtonProps {
+  className?: string
+  triggerContent?: ReactNode
+  ariaLabel?: string
+  title?: string
+}
+
+export function EarlyAccessButton({
+  className = "",
+  triggerContent,
+  ariaLabel,
+  title,
+}: EarlyAccessButtonProps) {
   const [open, setOpen] = useState(false)
   const [locale, setLocale] = useState<FormLocale>("de")
   const [name, setName] = useState("")
@@ -96,9 +108,16 @@ export function EarlyAccessButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-all hover:border-border hover:bg-background/70 hover:text-foreground"
+        aria-label={ariaLabel}
+        title={title}
+        className={[
+          "inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-all hover:border-border hover:bg-background/70 hover:text-foreground",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
-        {COPY.de.open}
+        {triggerContent ?? COPY.de.open}
       </button>
 
       {open ? (

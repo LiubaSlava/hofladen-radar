@@ -11,11 +11,13 @@ import {
   ChevronLeft,
   MessageSquareText,
   Smartphone,
+  Sparkles,
 } from "lucide-react"
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "hofladen", label: "Hofladen", icon: Store },
+  { key: "ki-ueberblick", label: "KI-Überblick", icon: Sparkles },
   { key: "kommentare", label: "Kommentare", icon: MessageSquareText },
   { key: "app-verwaltung", label: "App-Verwaltung", icon: Smartphone },
   { key: "produkte", label: "Produkte", icon: Package },
