@@ -14,6 +14,7 @@ import {
   Sparkles,
   FileJson2,
 } from "lucide-react"
+import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,9 +44,9 @@ export function AdminSidebar({ active, onChange }: AdminSidebarProps) {
     >
       {/* Brand */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
           <Image
-            src="/logo.png"
+            src={BRAND_LOGO_SRC}
             alt="Hofladen Radar"
             width={72}
             height={72}

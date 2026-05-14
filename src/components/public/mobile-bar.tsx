@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { LanguageSwitcher } from "@/components/public/language-switcher"
 import { EarlyAccessButton } from "@/components/public/early-access-button"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
+import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 
 interface MobileBarProps {
   searchQuery: string
@@ -215,9 +216,9 @@ export function MobileBar({
         <section className={`${capsule} overflow-hidden p-0 ring-1 ring-primary/[0.07]`}>
           <div className="border-b border-border/50 bg-brand-mint/60 px-3 py-2.5">
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-sm">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-card shadow-sm">
                 <Image
-                  src="/logo.png"
+                  src={BRAND_LOGO_SRC}
                   alt="Hofladen Radar"
                   width={64}
                   height={64}

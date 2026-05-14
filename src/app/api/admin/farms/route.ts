@@ -1,13 +1,12 @@
 import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
 import type { SupabaseFarmRow } from "@/lib/farms-mapper"
+import { FARM_TABLE_SELECT } from "@/lib/farms-table-select"
 import { mapFarmRowWithKiUeberblick } from "@/lib/ki-ueberblick"
 import { isPersistedFarmUuid } from "@/lib/farm-id"
+import { normalizePublicSlugInput } from "@/lib/seo-slug"
 
 const ADMIN_AUTH_HEADER = "x-admin-auth"
 const ADMIN_AUTH_VALUE = "Gloryadmin:Glory27041958"
-
-const FARMS_SELECT =
-  "id,created_at,name,address,latitude,longitude,products,has_shop,has_parking,has_restaurant,has_accommodation,has_playground,has_quiz,has_delivery,is_open,ai_message_de,ai_message_en,ai_message_fr,ai_message_it,ai_message_sr,ai_message_ua,status,rating,image_url,website_url,category,contact_info,opening_hours"
 
 type FarmPayload = {
   id?: string
@@ -37,6 +36,10 @@ type FarmPayload = {
   contact_info?: unknown
   opening_hours?: unknown
   category?: "farm" | "shop" | "attraction"
+  public_slug?: string | null
+  seo_title?: string | null
+  seo_description?: string | null
+  public_page_text?: string | null
 }
 
 function parseJsonMaybe(value: unknown): unknown {
@@ -55,6 +58,13 @@ function toNumberSafe(value: unknown): number {
   if (typeof value !== "string") return Number.NaN
   const parsed = Number(value.trim().replace(",", "."))
   return Number.isFinite(parsed) ? parsed : Number.NaN
+}
+
+function trimToNull(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null
+  const t = value.trim()
+  if (!t) return null
+  return t.slice(0, max)
 }
 
 function normalizePayload(raw: Record<string, unknown>, isCreate: boolean): FarmPayload {
@@ -101,6 +111,10 @@ function normalizePayload(raw: Record<string, unknown>, isCreate: boolean): Farm
     contact_info: parseJsonMaybe(raw.contact_info),
     opening_hours: parseJsonMaybe(raw.opening_hours),
     category,
+    public_slug: normalizePublicSlugInput(String(raw.public_slug ?? "")),
+    seo_title: trimToNull(raw.seo_title, 200),
+    seo_description: trimToNull(raw.seo_description, 320),
+    public_page_text: trimToNull(raw.public_page_text, 20000),
   }
 }
 
@@ -124,10 +138,16 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("farms")
     .insert(payload)
-    .select(FARMS_SELECT)
+    .select(FARM_TABLE_SELECT)
     .single<SupabaseFarmRow>()
 
-  if (error || !data) return Response.json({ error: error?.message ?? "Insert failed" }, { status: 400 })
+  if (error || !data) {
+    const code = (error as { code?: string } | undefined)?.code
+    if (code === "23505") {
+      return Response.json({ error: "Dieser URL-Pfad (Slug) ist bereits vergeben." }, { status: 409 })
+    }
+    return Response.json({ error: error?.message ?? "Insert failed" }, { status: 400 })
+  }
   return Response.json({ farm: await mapFarmRowWithKiUeberblick(supabase, data) })
 }
 
@@ -149,10 +169,16 @@ export async function PUT(request: Request) {
     .from("farms")
     .update(rest)
     .eq("id", id)
-    .select(FARMS_SELECT)
+    .select(FARM_TABLE_SELECT)
     .single<SupabaseFarmRow>()
 
-  if (error || !data) return Response.json({ error: error?.message ?? "Update failed" }, { status: 400 })
+  if (error || !data) {
+    const code = (error as { code?: string } | undefined)?.code
+    if (code === "23505") {
+      return Response.json({ error: "Dieser URL-Pfad (Slug) ist bereits vergeben." }, { status: 409 })
+    }
+    return Response.json({ error: error?.message ?? "Update failed" }, { status: 400 })
+  }
   return Response.json({ farm: await mapFarmRowWithKiUeberblick(supabase, data) })
 }
 

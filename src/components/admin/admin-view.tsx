@@ -43,6 +43,10 @@ type FarmFormData = {
   ai_message_ua: string
   contact_info: string
   opening_hours: string
+  public_slug: string
+  seo_title: string
+  seo_description: string
+  public_page_text: string
 }
 
 interface AdminViewProps {
@@ -276,6 +280,10 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
       contact_info: data.contact_info,
       opening_hours: data.opening_hours,
       category: data.category,
+      public_slug: data.public_slug,
+      seo_title: data.seo_title,
+      seo_description: data.seo_description,
+      public_page_text: data.public_page_text,
     }
 
     const method = updating ? "PUT" : "POST"
@@ -285,6 +293,10 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
       body: JSON.stringify(payload),
     })
     const result = (await response.json()) as { farm?: Farm; error?: string }
+    if (response.status === 409) {
+      window.alert(result.error ?? "Dieser URL-Pfad (Slug) ist bereits vergeben.")
+      return
+    }
     if (!response.ok || !result.farm) {
       console.error("Save farm failed:", result.error ?? "unknown")
       window.alert(`Speichern fehlgeschlagen: ${result.error ?? "Unbekannter Fehler"}`)
@@ -599,6 +611,7 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
         onClose={() => setModalOpen(false)}
         onSave={saveFarm}
         initial={editing}
+        allFarms={farms}
       />
 
       <ReviewModal

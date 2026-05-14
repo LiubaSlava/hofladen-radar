@@ -30,6 +30,10 @@ export type SupabaseFarmRow = {
   category?: string | null
   contact_info?: Record<string, unknown> | null
   opening_hours?: Record<string, unknown> | string | null
+  public_slug?: string | null
+  seo_title?: string | null
+  seo_description?: string | null
+  public_page_text?: string | null
 }
 
 const CATEGORY_KEYS: readonly CategoryKey[] = [
@@ -262,5 +266,9 @@ export function mapSupabaseFarmRow(row: SupabaseFarmRow): Farm {
     is_open: row.is_open ?? false,
     contact_info: row.contact_info ?? null,
     opening_hours: row.opening_hours ?? null,
+    public_slug: row.public_slug?.trim() || undefined,
+    seo_title: row.seo_title?.trim() || undefined,
+    seo_description: row.seo_description?.trim() || undefined,
+    public_page_text: row.public_page_text?.trim() || undefined,
   }
 }

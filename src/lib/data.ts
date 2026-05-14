@@ -103,6 +103,12 @@ export interface Farm {
   is_open?: boolean
   contact_info?: Record<string, unknown> | null
   opening_hours?: Record<string, unknown> | string | null
+  /** URL segment for `/hof/[slug]` — set in Admin (SEO). */
+  public_slug?: string
+  seo_title?: string
+  seo_description?: string
+  /** Extra copy shown on the public SEO page (plain text). */
+  public_page_text?: string
 }
 
 export interface Attraction {

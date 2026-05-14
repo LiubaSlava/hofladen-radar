@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { absoluteMediaUrl, getPublicSiteOrigin } from '@/lib/site-url'
+import { BRAND_LOGO_SRC } from '@/lib/brand-assets'
 import './globals.css'
 
 const inter = Inter({
@@ -116,41 +118,33 @@ async function getSeoLocale(): Promise<SeoLocale> {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getSeoLocale()
   const copy = SEO_COPY[locale]
+  const site = getPublicSiteOrigin()
+  const ogImage = absoluteMediaUrl(BRAND_LOGO_SRC)
   return {
-    metadataBase: new URL('https://hofladenradar.ch'),
+    metadataBase: new URL(site),
     title: copy.title,
     description: copy.description,
     keywords: copy.keywords,
     openGraph: {
       type: 'website',
       locale: copy.openGraphLocale,
-      url: 'https://hofladenradar.ch',
+      url: site,
       siteName: 'Hofladen Radar',
       title: copy.title,
       description: copy.description,
+      images: [{ url: ogImage, alt: "Hofladen Radar" }],
     },
     twitter: {
       card: 'summary_large_image',
       title: copy.title,
       description: copy.description,
+      images: [ogImage],
     },
     generator: 'v0.app',
     icons: {
-      icon: [
-        {
-          url: '/icon-light-32x32.png?v=2',
-        },
-        {
-          url: '/icon-light-32x32.png?v=2',
-          media: '(prefers-color-scheme: light)',
-        },
-        {
-          url: '/icon-dark-32x32.png?v=2',
-          media: '(prefers-color-scheme: dark)',
-        },
-      ],
-      shortcut: '/icon-light-32x32.png?v=2',
-      apple: '/apple-icon.png?v=2',
+      icon: [{ url: BRAND_LOGO_SRC, sizes: 'any' }],
+      shortcut: BRAND_LOGO_SRC,
+      apple: BRAND_LOGO_SRC,
     },
   }
 }

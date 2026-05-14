@@ -7,6 +7,7 @@ import { Star, MapPin, Sparkles, Leaf, Sprout } from "lucide-react"
 import { PRODUCT_LABELS, type Farm } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { haversineDistanceKm } from "@/lib/geo"
+import { getPublicSiteOrigin } from "@/lib/site-url"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
 
 const FarmReviewsSection = dynamic(
@@ -358,19 +359,24 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
       window.open(websiteUrl, "_blank", "noopener,noreferrer")
       return
     }
+    if (key !== "share") return
+    const shareUrl =
+      farm.public_slug?.trim().length > 0
+        ? `${getPublicSiteOrigin()}/hof/${encodeURIComponent(farm.public_slug.trim())}`
+        : window.location.href
     if (navigator.share) {
       try {
         await navigator.share({
           title: farm.name,
           text: `${farm.name} — ${farm.address}`,
-          url: window.location.href,
+          url: shareUrl,
         })
         return
       } catch {
         // fallback below
       }
     }
-    await navigator.clipboard?.writeText(`${farm.name} — ${farm.address}`)
+    await navigator.clipboard?.writeText(`${farm.name} — ${farm.address}\n${shareUrl}`)
   }
 
   return (

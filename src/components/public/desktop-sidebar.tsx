@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { LanguageSwitcher } from "@/components/public/language-switcher"
 import { EarlyAccessButton } from "@/components/public/early-access-button"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
+import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 
 interface DesktopSidebarProps {
   searchQuery: string
@@ -254,9 +255,9 @@ export function DesktopSidebar({
       <section className="shrink-0 overflow-hidden rounded-2xl border border-border bg-card/95 shadow-sm ring-1 ring-primary/[0.07] backdrop-blur-xl">
         <div className="border-b border-border/50 bg-brand-mint/60 px-4 py-3.5">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-card shadow-sm">
               <Image
-                src="/logo.png"
+                src={BRAND_LOGO_SRC}
                 alt="Hofladen Radar"
                 width={80}
                 height={80}

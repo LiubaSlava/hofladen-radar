@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import Image from "next/image"
 import { PRODUCT_LABELS, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
+import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 import { DetailPanel } from "@/components/public/detail-panel"
 import { haversineDistanceKm } from "@/lib/geo"
 
@@ -248,14 +249,14 @@ export function RadarView({ farms }: RadarViewProps) {
         translate="no"
       >
         <Image
-          src="/logo.png"
+          src={BRAND_LOGO_SRC}
           alt=""
           aria-hidden
           width={24}
           height={24}
           loading="lazy"
           fetchPriority="low"
-          className="h-4 w-4 shrink-0 object-contain lg:h-5 lg:w-5"
+          className="h-4 w-4 shrink-0 rounded-full object-contain lg:h-5 lg:w-5"
         />
         <div>
           <p>Entwickelt von AXON CREATIVE CH</p>

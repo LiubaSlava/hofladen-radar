@@ -1,12 +1,10 @@
 import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
 import type { SupabaseFarmRow } from "@/lib/farms-mapper"
+import { FARM_TABLE_SELECT } from "@/lib/farms-table-select"
 import { mapFarmRowWithKiUeberblick, type KiUeberblickRow } from "@/lib/ki-ueberblick"
 
 const ADMIN_AUTH_HEADER = "x-admin-auth"
 const ADMIN_AUTH_VALUE = "Gloryadmin:Glory27041958"
-
-const FARMS_SELECT =
-  "id,created_at,name,address,latitude,longitude,products,has_shop,has_parking,has_restaurant,has_accommodation,has_playground,has_quiz,has_delivery,is_open,ai_message_de,ai_message_en,ai_message_fr,ai_message_it,ai_message_sr,ai_message_ua,status,rating,image_url,website_url,category,contact_info,opening_hours"
 
 function isAdminAuthorized(request: Request): boolean {
   return request.headers.get(ADMIN_AUTH_HEADER) === ADMIN_AUTH_VALUE
@@ -60,7 +58,7 @@ export async function PUT(request: Request) {
 
   const { data, error } = await supabase
     .from("farms")
-    .select(FARMS_SELECT)
+    .select(FARM_TABLE_SELECT)
     .eq("id", id)
     .single<SupabaseFarmRow>()
 

@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { X, MapPin } from "lucide-react"
 import { CATEGORIES, PRODUCT_LABELS, type CategoryKey, type Farm } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
+import { FarmSeoBlock } from "@/components/admin/farm-seo-block"
+import { uniqueFarmSlugFromNameAddress } from "@/lib/farm-slug-suggest"
+import { normalizePublicSlugInput } from "@/lib/seo-slug"
 
 type FarmFormData = {
   id?: string
@@ -35,6 +38,10 @@ type FarmFormData = {
   ai_message_ua: string
   contact_info: string
   opening_hours: string
+  public_slug: string
+  seo_title: string
+  seo_description: string
+  public_page_text: string
 }
 
 interface FarmModalProps {
@@ -42,6 +49,8 @@ interface FarmModalProps {
   onClose: () => void
   onSave: (farm: FarmFormData) => Promise<void> | void
   initial?: Farm | null
+  /** Alle Hofeinträge (lokal), um SEO-Slug-Dopplungen vor dem Speichern zu erkennen. */
+  allFarms?: Farm[]
 }
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -64,7 +73,7 @@ function toNumberSafe(value: string): number {
   return Number.isFinite(parsed) ? parsed : NaN
 }
 
-export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
+export function FarmModal({ open, onClose, onSave, initial, allFarms = [] }: FarmModalProps) {
   const [name, setName] = useState(initial?.name ?? "")
   const [address, setAddress] = useState(initial?.address ?? "")
   const [lat, setLat] = useState(String(initial?.lat ?? "52.52"))
@@ -105,6 +114,12 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
         ? JSON.stringify(initial.opening_hours)
         : "{}",
   )
+  const [publicSlug, setPublicSlug] = useState(initial?.public_slug ?? "")
+  const [seoTitle, setSeoTitle] = useState(initial?.seo_title ?? "")
+  const [seoDescription, setSeoDescription] = useState(initial?.seo_description ?? "")
+  const [publicPageText, setPublicPageText] = useState(initial?.public_page_text ?? "")
+  /** Sobald der Nutzer das Slug-Feld ändert, keine automatische Überschreibung mehr (leer lassen = bewusst ohne Slug). */
+  const [slugUserTouched, setSlugUserTouched] = useState(() => Boolean(initial?.public_slug?.trim()))
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [instagram, setInstagram] = useState("")
@@ -196,6 +211,42 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
     setOpeningHours(JSON.stringify(nextOpening))
   }, [dayClose, dayClosed, dayOpen, helpersInitialized])
 
+  const normalizedSlugDraft = useMemo(() => normalizePublicSlugInput(publicSlug), [publicSlug])
+
+  const slugDuplicateFarmName = useMemo(() => {
+    if (!normalizedSlugDraft) return null
+    const selfId = initial?.id
+    for (const f of allFarms) {
+      if (selfId && f.id === selfId) continue
+      const other = normalizePublicSlugInput(f.public_slug ?? "")
+      if (other && other === normalizedSlugDraft) return f.name
+    }
+    return null
+  }, [allFarms, initial?.id, normalizedSlugDraft])
+
+  const metaDescriptionMatchesPublicBody = useMemo(() => {
+    const a = seoDescription.trim()
+    const b = publicPageText.trim()
+    if (a.length < 10 || b.length < 10) return false
+    return a === b
+  }, [seoDescription, publicPageText])
+
+  useEffect(() => {
+    if (slugUserTouched) return
+    const taken = new Set<string>()
+    for (const f of allFarms) {
+      if (initial?.id && f.id === initial.id) continue
+      const s = normalizePublicSlugInput(f.public_slug ?? "")
+      if (s) taken.add(s)
+    }
+    const next = uniqueFarmSlugFromNameAddress(name, address, taken)
+    if (!next) {
+      setPublicSlug("")
+      return
+    }
+    setPublicSlug((prev) => (prev === next ? prev : next))
+  }, [address, allFarms, initial?.id, name, slugUserTouched])
+
   if (!open) return null
 
   const toggleStock = (key: CategoryKey) => {
@@ -253,6 +304,18 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
       return
     }
 
+    if (publicSlug.trim() && !normalizePublicSlugInput(publicSlug)) {
+      window.alert("SEO-Slug ist ungültig. Nur Kleinbuchstaben, Ziffern und Bindestriche — oder Feld leeren.")
+      return
+    }
+
+    if (slugDuplicateFarmName) {
+      window.alert(
+        `Dieser Slug ist bereits vergeben („${slugDuplicateFarmName}“). Bitte einen anderen URL-Pfad wählen.`,
+      )
+      return
+    }
+
     await onSave({
       id: initial?.id,
       name,
@@ -283,6 +346,10 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
       ai_message_ua: aiUa,
       contact_info: contactInfo,
       opening_hours: openingHours,
+      public_slug: publicSlug,
+      seo_title: seoTitle,
+      seo_description: seoDescription,
+      public_page_text: publicPageText,
     })
   }
 
@@ -384,6 +451,27 @@ export function FarmModal({ open, onClose, onSave, initial }: FarmModalProps) {
               className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
+
+          <FarmSeoBlock
+            publicSlug={publicSlug}
+            onPublicSlugChange={(v) => {
+              setSlugUserTouched(true)
+              setPublicSlug(v)
+            }}
+            seoTitle={seoTitle}
+            onSeoTitleChange={setSeoTitle}
+            seoDescription={seoDescription}
+            onSeoDescriptionChange={setSeoDescription}
+            publicPageText={publicPageText}
+            onPublicPageTextChange={setPublicPageText}
+            farmName={name}
+            farmStatus={status}
+            slugDuplicateFarmName={slugDuplicateFarmName}
+            duplicateMetaAndBody={metaDescriptionMatchesPublicBody}
+            onResetSlugFromNameAddress={() => {
+              setSlugUserTouched(false)
+            }}
+          />
 
           {/* Type toggle (farm / shop / attraction) */}
           <div className="mt-4 space-y-1.5">
