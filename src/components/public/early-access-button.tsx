@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
+import { cn } from "@/lib/utils"
 
 type FormLocale = "de" | "en" | "it" | "uk" | "fr"
 
@@ -110,12 +111,10 @@ export function EarlyAccessButton({
         onClick={() => setOpen(true)}
         aria-label={ariaLabel}
         title={title}
-        className={[
-          "inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-all hover:border-border hover:bg-background/70 hover:text-foreground",
+        className={cn(
+          "inline-flex items-center justify-center gap-1 rounded-full border border-border/60 bg-background/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-background/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
           className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        )}
       >
         {triggerContent ?? COPY.de.open}
       </button>

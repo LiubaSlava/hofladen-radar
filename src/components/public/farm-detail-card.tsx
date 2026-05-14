@@ -1,27 +1,31 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
-import {
-  Star,
-  MapPin,
-  Store,
-  ParkingCircle,
-  UtensilsCrossed,
-  Baby,
-  Navigation,
-  Phone,
-  Globe,
-  Share2,
-  Sparkles,
-  Leaf,
-  Sprout,
-} from "lucide-react"
+import { Star, MapPin, Sparkles, Leaf, Sprout } from "lucide-react"
 import { PRODUCT_LABELS, type Farm } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { haversineDistanceKm } from "@/lib/geo"
-import { FarmReviewsSection } from "@/components/public/farm-reviews-section"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
+
+const FarmReviewsSection = dynamic(
+  () => import("@/components/public/farm-reviews-section").then((mod) => mod.FarmReviewsSection),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="rounded-2xl border border-border bg-muted/30 p-6"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <div className="h-3.5 w-36 animate-pulse rounded bg-muted-foreground/15" />
+        <div className="mt-4 h-16 animate-pulse rounded-xl bg-muted-foreground/10" />
+        <div className="mt-2 h-16 animate-pulse rounded-xl bg-muted-foreground/10" />
+      </div>
+    ),
+  },
+)
 
 interface FarmDetailCardProps {
   farm: Farm
@@ -30,18 +34,34 @@ interface FarmDetailCardProps {
 }
 
 const FEATURE_ITEMS = [
-  { key: "shop", label: "Shop", icon: Store },
-  { key: "parking", label: "Parkplatz", icon: ParkingCircle },
-  { key: "restaurant", label: "Restaurant", icon: UtensilsCrossed },
-  { key: "playground", label: "Spielplatz", icon: Baby },
+  { key: "shop", label: "Shop" },
+  { key: "parking", label: "Parkplatz" },
+  { key: "restaurant", label: "Restaurant" },
+  { key: "playground", label: "Spielplatz" },
 ] as const
 
+/** Emoji pictograms — same capsule vocabulary as the main radar filters. */
+const FEATURE_EMOJI: Record<(typeof FEATURE_ITEMS)[number]["key"], string> = {
+  shop: "🏪",
+  parking: "🅿️",
+  restaurant: "🍽️",
+  playground: "🛝",
+}
+
 const ACTION_ITEMS = [
-  { key: "route", label: "Route", icon: Navigation },
-  { key: "contact", label: "Kontakt", icon: Phone },
-  { key: "website", label: "Webseite", icon: Globe },
-  { key: "share", label: "Teilen", icon: Share2 },
+  { key: "route", label: "Route" },
+  { key: "contact", label: "Kontakt" },
+  { key: "website", label: "Webseite" },
+  { key: "share", label: "Teilen" },
 ] as const
+
+/** Emoji actions — same capsule strip as equipment / main panel. */
+const ACTION_EMOJI: Record<(typeof ACTION_ITEMS)[number]["key"], string> = {
+  route: "🧭",
+  contact: "📇",
+  website: "🌐",
+  share: "📤",
+}
 
 // Nearby attractions are meant to be a short walking add-on around the farm.
 const ATTRACTIONS_RADIUS_KM = 1
@@ -238,16 +258,24 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
     return /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`
   }, [contactInfo.website, farm.website_url])
 
-  const contactHref = useMemo(() => {
+  const contactPhoneRaw = useMemo(() => {
     const phone =
       (typeof contactInfo.phone === "string" && contactInfo.phone.trim()) ||
       (typeof contactInfo.tel === "string" && contactInfo.tel.trim()) ||
       ""
-    if (phone) return `tel:${phone.replace(/\s+/g, "")}`
+    return phone
+  }, [contactInfo.phone, contactInfo.tel])
+
+  const contactEmailRaw = useMemo(() => {
     const email = typeof contactInfo.email === "string" ? contactInfo.email.trim() : ""
-    if (email) return `mailto:${email}`
+    return email
+  }, [contactInfo.email])
+
+  const contactHref = useMemo(() => {
+    if (contactPhoneRaw) return `tel:${contactPhoneRaw.replace(/\s+/g, "")}`
+    if (contactEmailRaw) return `mailto:${contactEmailRaw}`
     return ""
-  }, [contactInfo.email, contactInfo.phone, contactInfo.tel])
+  }, [contactEmailRaw, contactPhoneRaw])
   const localizedDescription = useMemo(() => {
     const byLocale: Record<AppLocale, string | undefined> = {
       de: farm.ai_message_de?.trim(),
@@ -346,9 +374,9 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
   }
 
   return (
-    <div className="space-y-4">
-      {/* Hero card */}
-      <article className="overflow-hidden rounded-[32px] border border-border/70 bg-card shadow-[0_20px_45px_rgba(0,0,0,0.12)]">
+    <div className="space-y-3">
+      {/* Hero card — same capsule language as sidebar / detail shell */}
+      <article className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-sm ring-1 ring-primary/[0.06] backdrop-blur-xl">
         {/* Hero image */}
         <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
           <Image
@@ -365,7 +393,7 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
           {/* Top badges */}
           <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
             {farm.openNow && (
-              <div className="flex items-center gap-1.5 rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md">
+              <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/95 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur-md">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
                   <span className="relative h-2 w-2 rounded-full bg-primary" />
@@ -374,48 +402,68 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
               </div>
             )}
 
-            <div className="ml-auto flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md">
+            <div className="ml-auto flex items-center gap-1 rounded-full border border-border/70 bg-card/95 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur-md">
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
               {farm.rating.toFixed(1)}
             </div>
           </div>
 
           {/* Distance badge */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-card/95 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-md">
-            <MapPin className="h-3.5 w-3.5 text-primary" />
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-border/70 bg-card/95 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground shadow-sm backdrop-blur-md">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
             {farm.distanceKm.toFixed(1)} km
           </div>
         </div>
 
         {/* Title section */}
-        <div className="space-y-3 px-5 pt-5">
+        <div className="space-y-3 px-4 pt-4 md:px-5 md:pt-5">
           <div>
-            <h2 className="text-[34px] font-bold leading-[1.05] tracking-tight text-foreground text-balance">
+            <h2 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-foreground md:text-3xl">
               {farm.name}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">{farm.address}</p>
+            {contactPhoneRaw || contactEmailRaw ? (
+              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                {contactEmailRaw ? (
+                  <p>
+                    <span className="font-medium text-foreground">E-Mail: </span>
+                    <a href={`mailto:${contactEmailRaw}`} className="text-primary underline-offset-2 hover:underline">
+                      {contactEmailRaw}
+                    </a>
+                  </p>
+                ) : null}
+                {contactPhoneRaw ? (
+                  <p>
+                    <span className="font-medium text-foreground">Tel.: </span>
+                    <a href={`tel:${contactPhoneRaw.replace(/\s+/g, "")}`} className="text-primary underline-offset-2 hover:underline">
+                      {contactPhoneRaw}
+                    </a>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
             {farm.features.shop && (
-              <span className="rounded-full border border-border/60 bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground">
+              <span className="rounded-full border border-primary/20 bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                 Shop
               </span>
             )}
             {farm.bio && (
-              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+              <span className="flex items-center gap-1 rounded-full border border-primary/20 bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                 <Leaf className="h-3 w-3" />
                 Bio
               </span>
             )}
-            <span className="rounded-full border border-border/60 bg-background/60 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+            <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
               {farm.openNow ? t.openNow : t.closedNow}
             </span>
           </div>
         </div>
 
         {/* Product tags */}
-        <div className="px-5 pt-5">
+        <div className="px-4 pt-4 md:px-5 md:pt-5">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t.assortment}
           </h3>
@@ -423,9 +471,9 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
             {farm.products.slice(0, 5).map((product) => (
               <div
                 key={product}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-background/60 p-2.5"
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-muted/70 p-2.5 text-center transition-colors hover:border-primary/25"
               >
-                <CategoryIcon category={product} className="h-5 w-5 text-primary" />
+                <CategoryIcon category={product} className="text-lg leading-none" />
                 <span className="text-[10px] font-medium text-foreground">
                   {categoryLabels[product]}
                 </span>
@@ -434,52 +482,55 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
           </div>
         </div>
 
-        {/* Features bar */}
-        <div className="px-5 pt-5">
+        {/* Features — capsules like main panel (Standorte) */}
+        <div className="notranslate px-4 pt-4 md:px-5 md:pt-5" translate="no">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t.equipment}
           </h3>
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            {localizedFeatureItems.map((feat) => {
-              const enabled = farm.features[feat.key]
-              const Icon = feat.icon
-              return (
-                <div
-                  key={feat.key}
-                  className={`flex flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-colors ${
-                    enabled
-                      ? "border-border/60 bg-background/60 text-foreground"
-                      : "border-border/40 bg-muted/40 text-muted-foreground/50"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-[10px] font-medium">{feat.label}</span>
-                </div>
-              )
-            })}
+          <div className="mt-3 rounded-2xl border border-border bg-muted p-1">
+            <div className="grid grid-cols-4 gap-1">
+              {localizedFeatureItems.map((feat) => {
+                const enabled = farm.features[feat.key]
+                return (
+                  <div
+                    key={feat.key}
+                    className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2.5 text-center transition-colors ${
+                      enabled
+                        ? "bg-accent text-primary shadow-sm"
+                        : "text-muted-foreground/55"
+                    }`}
+                  >
+                    <span className="select-none text-base leading-none" aria-hidden>
+                      {FEATURE_EMOJI[feat.key]}
+                    </span>
+                    <span className="text-[10px] font-semibold leading-tight">{feat.label}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
         {/* Seasonal block */}
         {farm.seasonal.length > 0 && (
-          <div className="px-5 pt-5">
-            <div className="rounded-2xl border border-amber-200/70 bg-amber-50/80 p-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-200/70">
-                  <Sprout className="h-4 w-4 text-amber-700" />
+          <div className="px-4 pt-4 md:px-5 md:pt-5">
+            <div className="overflow-hidden rounded-2xl border border-border bg-muted/50 shadow-sm ring-1 ring-primary/[0.04]">
+              <div className="flex items-center gap-2 border-b border-border/60 bg-brand-butter/80 px-3 py-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-card/90">
+                  <Sprout className="h-4 w-4 text-brand-butter-foreground" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-amber-900">{t.seasonNow}</h3>
-                  <p className="text-[11px] text-amber-800/80">{t.seasonHint}</p>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-brand-butter-foreground">{t.seasonNow}</h3>
+                  <p className="text-[11px] leading-snug text-muted-foreground">{t.seasonHint}</p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 p-3">
                 {farm.seasonal.map((item) => (
                   <span
                     key={item}
-                    className="flex items-center gap-1 rounded-full bg-card/80 px-2.5 py-1 text-[11px] font-medium text-amber-900 shadow-sm"
+                    className="flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground"
                   >
-                    <Leaf className="h-3 w-3 text-amber-700" />
+                    <Leaf className="h-3 w-3 text-muted-foreground" />
                     {item}
                   </span>
                 ))}
@@ -488,66 +539,64 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
           </div>
         )}
 
-        {/* Action toolbar */}
-        <div className="px-5 pt-5">
-          <div className="grid grid-cols-4 gap-2">
-            {ACTION_ITEMS.map((action) => {
-              const Icon = action.icon
-              const primary = action.key === "route"
-              return (
-                <button
-                  key={action.key}
-                  type="button"
-                  onClick={() => void handleActionClick(action.key)}
-                  disabled={
-                    (action.key === "contact" && !contactHref) ||
-                    (action.key === "website" && !websiteUrl)
-                  }
-                  className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 transition-all ${
-                    primary
-                      ? "border-primary/50 bg-background text-foreground hover:bg-muted"
-                      : "border-border/60 bg-background text-foreground hover:border-border hover:bg-muted/80"
-                  } disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  <Icon className={`h-5 w-5 ${primary ? "text-red-500" : "text-foreground"}`} />
-                  <span className="text-[10px] font-semibold">{actionLabels[action.key]}</span>
-                </button>
-              )
-            })}
+        {/* Action toolbar — capsules + emoji (design only; same handlers / disabled rules) */}
+        <div className="notranslate px-4 pt-4 md:px-5 md:pt-5" translate="no">
+          <div className="rounded-2xl border border-border bg-muted p-1">
+            <div className="grid grid-cols-4 gap-1">
+              {ACTION_ITEMS.map((action) => {
+                const primary = action.key === "route"
+                return (
+                  <button
+                    key={action.key}
+                    type="button"
+                    onClick={() => void handleActionClick(action.key)}
+                    disabled={
+                      (action.key === "contact" && !contactHref) ||
+                      (action.key === "website" && !websiteUrl)
+                    }
+                    className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2.5 text-center transition-all ${
+                      primary
+                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                        : "text-foreground hover:bg-accent hover:text-primary"
+                    } disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-foreground`}
+                  >
+                    <span
+                      className={`select-none text-base leading-none ${primary ? "" : "opacity-90"}`}
+                      aria-hidden
+                    >
+                      {ACTION_EMOJI[action.key]}
+                    </span>
+                    <span className="text-[10px] font-semibold leading-tight">{actionLabels[action.key]}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
         {/* AI Summary block */}
-        <div className="px-5 pt-5">
-          <div className="relative overflow-hidden rounded-2xl p-[1.5px]">
-            <div
-              className="absolute inset-0 opacity-90"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(59, 130, 246, 0.4), rgba(16, 185, 129, 0.4))",
-              }}
-              aria-hidden="true"
-            />
-            <div className="relative rounded-[14px] bg-card/90 p-4 backdrop-blur-xl">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-                  <Sparkles className="h-4 w-4 text-purple-600" />
-                </div>
-                <h3 className="text-sm font-semibold tracking-tight text-foreground">
-                  {t.aiTitle}
-                </h3>
-                <span className="ml-auto rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-purple-700">
-                  Beta
-                </span>
+        <div className="px-4 pt-4 md:px-5 md:pt-5">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/[0.06]">
+            <div className="flex items-center gap-2 border-b border-border/60 bg-brand-mint/55 px-3 py-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card/80">
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                {localizedAiSummary || t.aiHint}
-              </p>
+              <h3 className="min-w-0 text-sm font-semibold tracking-tight text-primary">{t.aiTitle}</h3>
+              <span className="ml-auto shrink-0 rounded-full border border-primary/20 bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                Beta
+              </span>
+            </div>
+            <div className="p-3">
+              <div className="rounded-xl border border-border/50 bg-muted/50 px-3 py-2.5">
+                <p className="text-sm leading-relaxed text-foreground">
+                  {localizedAiSummary || t.aiHint}
+                </p>
+              </div>
               {!localizedAiSummary ? (
                 <div className="mt-3 flex items-center gap-1">
-                  <div className="h-1 w-12 animate-pulse rounded-full bg-purple-400/60" />
-                  <div className="h-1 w-8 animate-pulse rounded-full bg-blue-400/60 [animation-delay:120ms]" />
-                  <div className="h-1 w-5 animate-pulse rounded-full bg-emerald-400/60 [animation-delay:240ms]" />
+                  <div className="h-1 w-12 animate-pulse rounded-full bg-muted-foreground/20" />
+                  <div className="h-1 w-8 animate-pulse rounded-full bg-muted-foreground/15 [animation-delay:120ms]" />
+                  <div className="h-1 w-5 animate-pulse rounded-full bg-muted-foreground/10 [animation-delay:240ms]" />
                 </div>
               ) : null}
             </div>
@@ -555,27 +604,29 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
         </div>
 
         {/* Description */}
-        <div className="px-5 pt-5">
+        <div className="px-4 pt-4 md:px-5 md:pt-5">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t.aboutFarm}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-foreground">{localizedDescription}</p>
+          <div className="mt-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2.5">
+            <p className="text-sm leading-relaxed text-foreground">{localizedDescription}</p>
+          </div>
         </div>
 
         {/* Reviews (Supabase + OAuth) */}
-        <div className="px-5 pb-6 pt-5">
-          <FarmReviewsSection farm={farm} />
+        <div className="px-4 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
+          <div className="rounded-2xl border border-border bg-muted/30 p-3 md:p-4">
+            <FarmReviewsSection farm={farm} />
+          </div>
         </div>
       </article>
 
-      {/* Nearby attractions */}
+      {/* Nearby attractions — clearer block at end of detail scroll */}
       {nearbyAttractions.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">
-              {t.attractionsNearby}
-            </h3>
-            <span className="text-xs text-muted-foreground">
+        <section className="scroll-mt-6 space-y-3 overflow-hidden rounded-2xl border border-border bg-card/95 p-4 shadow-sm ring-1 ring-primary/[0.06] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">{t.attractionsNearby}</h3>
+            <span className="shrink-0 whitespace-nowrap rounded-full border border-primary/20 bg-accent px-2 py-0.5 text-xs font-medium text-primary">
               {nearbyAttractions.length} {nearbyAttractions.length === 1 ? t.placeSingle : t.placePlural}
             </span>
           </div>
@@ -585,7 +636,7 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
                 key={attraction.id}
                 type="button"
                 onClick={() => onSelectPoint?.(attraction.id)}
-                className="block w-full overflow-hidden rounded-2xl border border-border/60 bg-card/80 text-left shadow-sm transition-colors hover:border-border"
+                className="block w-full overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/40"
               >
                 <div className="relative h-28 w-full overflow-hidden bg-muted">
                   <Image
@@ -604,7 +655,7 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
                 </div>
                 <div className="flex items-center justify-between gap-2 p-3">
                   <p className="line-clamp-1 text-sm font-semibold text-foreground">{attraction.name}</p>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                  <span className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
                     {attraction.distanceKm.toFixed(1)} km
                   </span>
                 </div>

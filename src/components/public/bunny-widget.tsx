@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Rabbit, X } from "lucide-react"
+import { X } from "lucide-react"
+import { HopperRabbitFace } from "@/components/graphics/hopper-rabbit-face"
+import { cn } from "@/lib/utils"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
 
 const COPY: Record<
@@ -24,7 +26,7 @@ const COPY: Record<
     close: "Schließen",
     bunnyLabel: "Hopper, der Hase",
     says: "Hopper sagt",
-    nextTip: "Nächster Tipp ->",
+    nextTip: "Nächster Tipp →",
   },
   fr: {
     tips: [
@@ -36,7 +38,7 @@ const COPY: Record<
     close: "Fermer",
     bunnyLabel: "Hopper, le lapin",
     says: "Hopper dit",
-    nextTip: "Astuce suivante ->",
+    nextTip: "Astuce suivante →",
   },
   it: {
     tips: [
@@ -48,7 +50,7 @@ const COPY: Record<
     close: "Chiudi",
     bunnyLabel: "Hopper, il coniglio",
     says: "Hopper dice",
-    nextTip: "Prossimo consiglio ->",
+    nextTip: "Prossimo consiglio →",
   },
   en: {
     tips: [
@@ -60,7 +62,7 @@ const COPY: Record<
     close: "Close",
     bunnyLabel: "Hopper the rabbit",
     says: "Hopper says",
-    nextTip: "Next tip ->",
+    nextTip: "Next tip →",
   },
   uk: {
     tips: [
@@ -72,8 +74,87 @@ const COPY: Record<
     close: "Закрити",
     bunnyLabel: "Хоппер, кролик",
     says: "Каже Хоппер",
-    nextTip: "Наступна порада ->",
+    nextTip: "Наступна порада →",
   },
+}
+
+interface HopperAvatarProps {
+  onClick: () => void
+  label: string
+  size: "md" | "lg"
+}
+
+function HopperAvatar({ onClick, label, size }: HopperAvatarProps) {
+  const lg = size === "lg"
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "notranslate group relative z-10 shrink-0 overflow-hidden rounded-full border border-border/80 bg-card p-[3px] shadow-md ring-1 ring-primary/[0.06] transition-transform hover:scale-[1.02] active:scale-[0.98]",
+        lg ? "h-16 w-16" : "h-12 w-12",
+      )}
+      aria-label={label}
+      translate="no"
+    >
+      <HopperRabbitFace className="h-full w-full transition-transform group-hover:scale-[1.04]" />
+    </button>
+  )
+}
+
+interface SpeechBubbleProps {
+  tip: string
+  says: string
+  close: string
+  nextTip: string
+  onClose: () => void
+  onNext: () => void
+  tail: "right" | "bottom"
+  className?: string
+}
+
+function SpeechBubble({ tip, says, close, nextTip, onClose, onNext, tail, className }: SpeechBubbleProps) {
+  return (
+    <div className={cn("notranslate relative", className)} translate="no">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/[0.06] backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-brand-mint/55 px-3 py-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">{says}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label={close}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <div className="relative p-3">
+          <div className="rounded-xl border border-border/50 bg-muted/50 px-3 py-2.5">
+            <p className="text-sm leading-relaxed text-foreground text-pretty">{tip}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onNext}
+            className="mt-2.5 text-left text-xs font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            {nextTip}
+          </button>
+        </div>
+      </div>
+
+      {tail === "right" ? (
+        <div
+          aria-hidden
+          className="absolute -right-2 bottom-7 z-0 h-3.5 w-3.5 rotate-45 border border-border bg-card shadow-sm"
+        />
+      ) : (
+        <div
+          aria-hidden
+          className="absolute -bottom-2 right-8 z-0 h-3.5 w-3.5 rotate-45 border border-border bg-card shadow-sm"
+        />
+      )}
+    </div>
+  )
 }
 
 interface BunnyWidgetProps {
@@ -97,68 +178,41 @@ export function BunnyWidget({ variant = "mobile" }: BunnyWidgetProps) {
   if (variant === "desktop") {
     return (
       <div className="pointer-events-auto fixed bottom-6 right-6 z-[60] hidden md:block">
-        <div className="flex items-end gap-3">
-          {open && (
-            <div className="notranslate relative max-w-xs rounded-3xl border border-border/60 bg-card/80 p-4 shadow-xl backdrop-blur-xl" translate="no">
-              <button
-                onClick={() => setOpen(false)}
-                className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={t.close}
-              >
-                <X className="h-3 w-3" />
-              </button>
-              <p className="text-xs font-medium uppercase tracking-wider text-primary">{t.says}</p>
-              <p className="mt-1 text-sm leading-relaxed text-foreground text-pretty">{tips[tipIndex]}</p>
-              <button
-                onClick={cycleTip}
-                className="mt-3 text-xs font-medium text-primary hover:underline"
-              >
-                {t.nextTip}
-              </button>
-              {/* Tail */}
-              <div className="absolute -right-2 bottom-6 h-4 w-4 rotate-45 border-b border-r border-border/60 bg-card/80 backdrop-blur-xl" />
-            </div>
-          )}
-          <button
-            onClick={() => setOpen(true)}
-            className="notranslate flex h-16 w-16 items-center justify-center rounded-full border border-border/60 bg-card/80 shadow-xl backdrop-blur-xl transition-transform hover:scale-105"
-            aria-label={t.bunnyLabel}
-            translate="no"
-          >
-            <Rabbit className="h-8 w-8 text-primary" />
-          </button>
+        <div className="flex flex-row-reverse items-end gap-2">
+          <HopperAvatar size="lg" label={t.bunnyLabel} onClick={() => setOpen(true)} />
+          {open ? (
+            <SpeechBubble
+              className="max-w-xs min-w-[240px]"
+              tip={tips[tipIndex]}
+              says={t.says}
+              close={t.close}
+              nextTip={t.nextTip}
+              onClose={() => setOpen(false)}
+              onNext={cycleTip}
+              tail="right"
+            />
+          ) : null}
         </div>
       </div>
     )
   }
 
-  // Mobile variant — top right
   return (
     <div className="pointer-events-auto fixed right-3 top-36 z-[60] md:hidden">
-      <div className="flex flex-col items-end gap-2">
-        <button
-          onClick={() => setOpen(true)}
-          className="notranslate flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 shadow-lg backdrop-blur-xl"
-          aria-label={t.bunnyLabel}
-          translate="no"
-        >
-          <Rabbit className="h-6 w-6 text-primary" />
-        </button>
-        {open && (
-          <div className="notranslate relative max-w-[220px] rounded-2xl border border-border/60 bg-card/80 p-3 shadow-lg backdrop-blur-xl" translate="no">
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute right-1.5 top-1.5 rounded-full p-1 text-muted-foreground"
-              aria-label={t.close}
-            >
-              <X className="h-3 w-3" />
-            </button>
-            <p className="pr-3 text-xs leading-snug text-foreground text-pretty">{tips[tipIndex]}</p>
-            <button onClick={cycleTip} className="mt-2 text-[10px] font-medium text-primary">
-              {t.nextTip}
-            </button>
-          </div>
-        )}
+      <div className="flex max-w-[min(280px,calc(100vw-1.5rem))] flex-col items-end gap-2">
+        {open ? (
+          <SpeechBubble
+            className="w-full"
+            tip={tips[tipIndex]}
+            says={t.says}
+            close={t.close}
+            nextTip={t.nextTip}
+            onClose={() => setOpen(false)}
+            onNext={cycleTip}
+            tail="bottom"
+          />
+        ) : null}
+        <HopperAvatar size="md" label={t.bunnyLabel} onClick={() => setOpen(true)} />
       </div>
     </div>
   )

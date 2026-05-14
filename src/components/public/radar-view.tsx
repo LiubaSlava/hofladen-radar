@@ -1,14 +1,11 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useMemo, useState } from "react"
 import Image from "next/image"
-import { FarmMap } from "@/components/farm-map"
-import { DesktopSidebar } from "@/components/public/desktop-sidebar"
-import { MobileBar } from "@/components/public/mobile-bar"
-import { BunnyWidget } from "@/components/public/bunny-widget"
-import { DetailPanel } from "@/components/public/detail-panel"
 import { PRODUCT_LABELS, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
+import { DetailPanel } from "@/components/public/detail-panel"
 import { haversineDistanceKm } from "@/lib/geo"
 
 interface RadarViewProps {
@@ -22,6 +19,43 @@ type Coordinates = {
 
 /** Same center as `FarmMap` default — distance filter uses this until GPS is available. */
 const DEFAULT_DISTANCE_ORIGIN: Coordinates = { lat: 47.4239, lng: 9.3767 }
+
+const FarmMap = dynamic(() => import("@/components/farm-map").then((mod) => mod.FarmMap), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="notranslate flex h-full w-full animate-pulse items-center justify-center bg-muted/40"
+      translate="no"
+    >
+      <div className="text-sm text-muted-foreground">Karte wird geladen…</div>
+    </div>
+  ),
+})
+
+const DesktopSidebar = dynamic(() => import("@/components/public/desktop-sidebar").then((m) => m.DesktopSidebar), {
+  ssr: false,
+  loading: () => (
+    <aside
+      className="pointer-events-none fixed left-4 top-4 z-40 hidden h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[340px] animate-pulse rounded-2xl border border-border/50 bg-muted/30 lg:block"
+      aria-hidden
+    />
+  ),
+})
+
+const MobileBar = dynamic(() => import("@/components/public/mobile-bar").then((m) => m.MobileBar), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="pointer-events-none fixed left-3 right-3 top-3 z-30 h-36 animate-pulse rounded-2xl border border-border/40 bg-muted/25 lg:hidden"
+      aria-hidden
+    />
+  ),
+})
+
+const BunnyWidget = dynamic(() => import("@/components/public/bunny-widget").then((m) => m.BunnyWidget), {
+  ssr: false,
+  loading: () => null,
+})
 
 export function RadarView({ farms }: RadarViewProps) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -107,14 +141,14 @@ export function RadarView({ farms }: RadarViewProps) {
 
       {/* Soft vignette to enhance glassmorphism */}
       <div
-        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-br from-background/30 via-transparent to-background/20"
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-br from-primary/[0.05] via-transparent to-background/25"
         aria-hidden="true"
       />
 
       {/* Desktop distance pill (MobileBar is lg:hidden, so this keeps km visible on wide screens too) */}
       <div className="pointer-events-none fixed left-1/2 top-3 z-30 hidden -translate-x-1/2 lg:block">
         <div
-          className="notranslate rounded-full bg-card/90 px-3 py-1 text-xs font-semibold tabular-nums text-foreground shadow-lg backdrop-blur border border-border/70"
+          className="notranslate rounded-full border border-border/80 bg-card/95 px-3 py-1 text-xs font-semibold tabular-nums text-foreground shadow-md backdrop-blur"
           translate="no"
         >
           {distance} km
@@ -159,7 +193,7 @@ export function RadarView({ farms }: RadarViewProps) {
 
       {/* Desktop list-mode overlay (only when no detail open) */}
       {viewMode === "list" && !selectedFarm && (
-        <div className="pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border/60 bg-card/85 p-6 shadow-2xl backdrop-blur-2xl lg:block">
+        <div className="pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-[0_14px_44px_rgba(13,61,40,0.12)] backdrop-blur-2xl lg:block">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
             Höfe in der Nähe
           </h2>
@@ -172,11 +206,11 @@ export function RadarView({ farms }: RadarViewProps) {
                 key={farm.id}
                 type="button"
                 onClick={() => handleSelectById(farm.id)}
-                className="rounded-2xl border border-border/50 bg-background/40 p-4 text-left transition-colors hover:border-border"
+                className="rounded-2xl border border-border bg-muted/70 p-4 text-left transition-colors hover:border-primary/30 hover:bg-accent/40"
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold text-foreground">{farm.name}</h3>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  <span className="rounded-full border border-primary/20 bg-accent px-2 py-0.5 text-[10px] font-medium text-primary">
                     {farm.distanceKm} km
                   </span>
                 </div>
@@ -188,7 +222,7 @@ export function RadarView({ farms }: RadarViewProps) {
                   {farm.categories.map((cat) => (
                     <span
                       key={cat}
-                      className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                      className="flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] text-muted-foreground"
                     >
                       <CategoryIcon category={cat} className="h-3 w-3" />
                     </span>
@@ -219,6 +253,8 @@ export function RadarView({ farms }: RadarViewProps) {
           aria-hidden
           width={24}
           height={24}
+          loading="lazy"
+          fetchPriority="low"
           className="h-4 w-4 shrink-0 object-contain lg:h-5 lg:w-5"
         />
         <div>

@@ -1,6 +1,7 @@
 import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
 import type { SupabaseFarmRow } from "@/lib/farms-mapper"
 import { mapFarmRowWithKiUeberblick } from "@/lib/ki-ueberblick"
+import { isPersistedFarmUuid } from "@/lib/farm-id"
 
 const ADMIN_AUTH_HEADER = "x-admin-auth"
 const ADMIN_AUTH_VALUE = "Gloryadmin:Glory27041958"
@@ -63,8 +64,17 @@ function normalizePayload(raw: Record<string, unknown>, isCreate: boolean): Farm
     ? raw.products.filter((x): x is string => typeof x === "string")
     : []
 
+  const rawId =
+    typeof raw.id === "string" && raw.id.trim().length > 0 ? raw.id.trim() : undefined
+
   return {
-    id: typeof raw.id === "string" && raw.id.length > 0 ? raw.id : isCreate ? crypto.randomUUID() : undefined,
+    id: isCreate
+      ? rawId && isPersistedFarmUuid(rawId)
+        ? rawId
+        : crypto.randomUUID()
+      : rawId && isPersistedFarmUuid(rawId)
+        ? rawId
+        : undefined,
     name: String(raw.name ?? "").trim(),
     address: String(raw.address ?? "").trim(),
     latitude: toNumberSafe(raw.latitude),

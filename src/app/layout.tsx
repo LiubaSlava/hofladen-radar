@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { Nunito_Sans, Geist_Mono } from 'next/font/google'
+import { Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const nunitoSans = Nunito_Sans({
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-ui',
@@ -164,7 +164,7 @@ export default async function RootLayout({
   return (
     <html
       lang={SEO_COPY[locale].htmlLang}
-      className={`${nunitoSans.variable} ${geistMono.variable} bg-background`}
+      className={`${inter.variable} ${geistMono.variable} bg-background`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased" suppressHydrationWarning>

@@ -6,6 +6,7 @@ import { Star } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser"
 import type { Farm } from "@/lib/data"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
+import { isPersistedFarmUuid } from "@/lib/farm-id"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,6 +27,7 @@ const UI_TEXT: Record<
     send: string
     enterReviewText: string
     enterName: string
+    previewReviewsNote: string
   }
 > = {
   de: {
@@ -34,6 +36,8 @@ const UI_TEXT: Record<
     yourName: "Dein Name",
     yourNamePlaceholder: "Name eingeben",
     emptyReviews: "Noch keine Bewertungen - sei der Erste!",
+    previewReviewsNote:
+      "Vorschau: Bewertungen sind erst verfügbar, wenn der Hof in der Datenbank gespeichert ist.",
     rating: "Bewertung",
     outOfFive: "von 5",
     text: "Text",
@@ -49,6 +53,8 @@ const UI_TEXT: Record<
     yourName: "Votre nom",
     yourNamePlaceholder: "Entrez votre nom",
     emptyReviews: "Aucun avis pour le moment - soyez le premier!",
+    previewReviewsNote:
+      "Aperçu: les avis seront disponibles une fois la ferme enregistrée dans la base de données.",
     rating: "Note",
     outOfFive: "sur 5",
     text: "Texte",
@@ -64,6 +70,8 @@ const UI_TEXT: Record<
     yourName: "Il tuo nome",
     yourNamePlaceholder: "Inserisci il nome",
     emptyReviews: "Nessuna recensione - sii il primo!",
+    previewReviewsNote:
+      "Anteprima: le recensioni saranno disponibili dopo il salvataggio della fattoria nel database.",
     rating: "Valutazione",
     outOfFive: "su 5",
     text: "Testo",
@@ -79,6 +87,7 @@ const UI_TEXT: Record<
     yourName: "Your name",
     yourNamePlaceholder: "Enter your name",
     emptyReviews: "No reviews yet - be the first!",
+    previewReviewsNote: "Preview: reviews are available after the farm is saved to the database.",
     rating: "Rating",
     outOfFive: "out of 5",
     text: "Text",
@@ -94,6 +103,8 @@ const UI_TEXT: Record<
     yourName: "Ваше ім'я",
     yourNamePlaceholder: "Введіть ім'я",
     emptyReviews: "Поки немає відгуків - будьте першим!",
+    previewReviewsNote:
+      "Перегляд: відгуки з’являться після збереження ферми в базі даних.",
     rating: "Оцінка",
     outOfFive: "з 5",
     text: "Текст",
@@ -146,6 +157,11 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
       setReviewsLoading(false)
       return
     }
+    if (!isPersistedFarmUuid(farm.id)) {
+      setReviews([])
+      setReviewsLoading(false)
+      return
+    }
     setReviewsLoading(true)
     const { data, error } = await supabase
       .from("reviews")
@@ -185,6 +201,10 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
 
   const submitReview = async () => {
     if (!supabase) return
+    if (!isPersistedFarmUuid(farm.id)) {
+      setSubmitError(t.previewReviewsNote)
+      return
+    }
     const trimmedName = authorName.trim()
     const trimmed = reviewText.trim()
     if (!trimmedName) {
@@ -236,6 +256,24 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
     )
   }
 
+  if (!isPersistedFarmUuid(farm.id)) {
+    return (
+      <>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.sectionTitle}</h3>
+          <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-foreground">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+            {farm.rating.toFixed(1)}
+            <span className="text-muted-foreground">(0)</span>
+          </span>
+        </div>
+        <p className="mt-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+          {t.previewReviewsNote}
+        </p>
+      </>
+    )
+  }
+
   return (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -247,7 +285,7 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
         </span>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-border/60 bg-background/40 p-3">
+      <div className="mt-3 rounded-2xl border border-border bg-muted p-3">
         <div className="grid gap-3">
           <div>
             <p className="mb-1.5 text-xs font-medium text-foreground">{t.yourName}</p>
@@ -288,7 +326,13 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
           </div>
           {submitError ? <p className="text-xs text-destructive">{submitError}</p> : null}
           <div className="flex justify-end">
-            <Button type="button" onClick={() => void submitReview()} disabled={submitting} className="rounded-full">
+            <Button
+              type="button"
+              onClick={() => void submitReview()}
+              disabled={submitting}
+              variant="secondary"
+              className="w-full rounded-2xl border border-border bg-secondary font-semibold text-foreground shadow-sm hover:bg-secondary/90"
+            >
               {submitting ? t.sending : t.send}
             </Button>
           </div>
@@ -303,7 +347,7 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
           </div>
         ) : reviews.length > 0 ? (
           reviews.map((review) => (
-            <div key={review.id} className="rounded-2xl border border-border/50 bg-background/40 p-3">
+            <div key={review.id} className="rounded-2xl border border-border/40 bg-card/80 p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">

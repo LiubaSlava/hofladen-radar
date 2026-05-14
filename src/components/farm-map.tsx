@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import type { Map as LeafletMap } from "leaflet"
-import type { Farm } from "@/lib/data"
+import { useMapEvents } from "react-leaflet"
+import type { Farm, VenueKind } from "@/lib/data"
 
 import "leaflet/dist/leaflet.css"
 
@@ -22,6 +23,23 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
 const Circle = dynamic(() => import("react-leaflet").then((mod) => mod.Circle), {
   ssr: false,
 })
+
+function MapMoveEndListener({
+  isProgrammaticMove,
+  onMoveEnd,
+}: {
+  isProgrammaticMove: () => boolean
+  onMoveEnd: (lat: number, lng: number) => void
+}) {
+  useMapEvents({
+    moveend: (e) => {
+      if (isProgrammaticMove()) return
+      const c = e.target.getCenter()
+      onMoveEnd(c.lat, c.lng)
+    },
+  })
+  return null
+}
 
 interface FarmMapProps {
   farms: Farm[]
@@ -66,6 +84,49 @@ function safelyDisposeMap(map: LeafletMap | null) {
   }
 }
 
+function venueMarkerEmoji(kind: VenueKind): string {
+  if (kind === "shop") return "🧺"
+  return "🚜"
+}
+
+function makeFarmMarkerIcon(L: typeof import("leaflet"), emoji: string, active: boolean) {
+  const bg = active ? "rgba(248,250,252,0.98)" : "rgba(255,255,255,0.96)"
+  const border = active ? "rgba(71,85,105,0.55)" : "rgba(148,163,184,0.65)"
+  const shadow = active ? "0 4px 14px rgba(15,23,42,0.2)" : "0 3px 10px rgba(15,23,42,0.14)"
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+        <div style="
+          width:34px;height:34px;border-radius:9999px;
+          background:${bg};
+          border:2px solid ${border};
+          box-shadow:${shadow};
+          display:flex;align-items:center;justify-content:center;
+          font-size:17px;line-height:1;
+        ">${emoji}</div>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -22],
+  })
+}
+
+function makeUserMarkerIcon(L: typeof import("leaflet")) {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+        <div style="font-size:26px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.22));">📍</div>
+      </div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 32],
+    popupAnchor: [0, -28],
+  })
+}
+
 function distanceMeters(a: UserLocation, b: UserLocation): number {
   const toRad = (value: number) => (value * Math.PI) / 180
   const earthRadius = 6371000
@@ -91,8 +152,7 @@ export function FarmMap({
   const [hasMounted, setHasMounted] = useState(false)
   const [containerReady, setContainerReady] = useState(false)
   const isGeolocationSupported = hasMounted && "geolocation" in navigator
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [icons, setIcons] = useState<{ default: any; active: any; user: any } | null>(null)
+  const [leafletModule, setLeafletModule] = useState<typeof import("leaflet") | null>(null)
   const [mapCenter, setMapCenter] = useState<[number, number]>(() => DEFAULT_CENTER)
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
   const [isLocating, setIsLocating] = useState(false)
@@ -132,47 +192,28 @@ export function FarmMap({
   useEffect(() => {
     import("leaflet").then((L) => {
       leafletRef.current = L
-      const makeIcon = (active: boolean) =>
-        L.divIcon({
-          className: "",
-          html: `
-            <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
-              <div style="
-                width:30px;height:30px;border-radius:9999px;
-                background:${active ? "oklch(0.45 0.18 145)" : "oklch(0.55 0.18 145)"};
-                border:3px solid white;
-                box-shadow:0 4px 12px rgba(0,0,0,0.18);
-                display:flex;align-items:center;justify-content:center;
-              ">
-                <div style="width:8px;height:8px;border-radius:9999px;background:white;"></div>
-              </div>
-            </div>
-          `,
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
-          popupAnchor: [0, -20],
-        })
-
-      const user = L.divIcon({
-        className: "",
-        html: `
-          <div style="position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;">
-            <div style="position:absolute;inset:-6px;border-radius:9999px;background:rgba(59,130,246,0.2);"></div>
-            <div style="
-              width:18px;height:18px;border-radius:9999px;
-              background:#3b82f6;
-              border:3px solid white;
-              box-shadow:0 4px 12px rgba(0,0,0,0.18);
-            "></div>
-          </div>
-        `,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17],
-      })
-
-      setIcons({ default: makeIcon(false), active: makeIcon(true), user })
+      setLeafletModule(L)
     })
   }, [])
+
+  const farmIconsById = useMemo(() => {
+    if (!leafletModule) return null
+    const L = leafletModule
+    const m = new Map<string, { def: ReturnType<typeof makeFarmMarkerIcon>; act: ReturnType<typeof makeFarmMarkerIcon> }>()
+    for (const farm of farms) {
+      const emoji = venueMarkerEmoji(farm.category)
+      m.set(farm.id, {
+        def: makeFarmMarkerIcon(L, emoji, false),
+        act: makeFarmMarkerIcon(L, emoji, true),
+      })
+    }
+    return m
+  }, [farms, leafletModule])
+
+  const userMarkerIcon = useMemo(() => {
+    if (!leafletModule) return null
+    return makeUserMarkerIcon(leafletModule)
+  }, [leafletModule])
 
   const fitToSearchRadius = useCallback(
     (location: UserLocation, km: number) => {
@@ -327,7 +368,7 @@ export function FarmMap({
     return programmaticMoveRef.current || Date.now() < programmaticMoveUntilRef.current
   }, [])
 
-  if (!icons || !hasMounted || !containerReady) {
+  if (!leafletModule || !farmIconsById || !userMarkerIcon || !hasMounted || !containerReady) {
     return (
       <div className="notranslate flex h-full w-full animate-pulse items-center justify-center bg-muted/40" translate="no">
         <div className="text-sm text-muted-foreground">Karte wird geladen…</div>
@@ -338,6 +379,7 @@ export function FarmMap({
   return (
     <div className="relative h-full w-full" ref={mapHostRef}>
       <MapContainer
+        ref={mapRef}
         center={mapCenter}
         zoom={INITIAL_ZOOM}
         className="h-full w-full"
@@ -345,21 +387,14 @@ export function FarmMap({
         zoomSnap={0.25}
         zoomDelta={0.25}
         preferCanvas
-        whenReady={(event) => {
-          if (mapRef.current && mapRef.current !== event.target) {
-            safelyDisposeMap(mapRef.current)
-          }
-          mapRef.current = event.target
+        whenReady={() => {
           setIsMapReady(true)
         }}
-        eventHandlers={{
-          moveend: (event) => {
-            if (isProgrammaticMove()) return
-            const center = event.target.getCenter()
-            setMapCenter([center.lat, center.lng])
-          },
-        }}
       >
+        <MapMoveEndListener
+          isProgrammaticMove={isProgrammaticMove}
+          onMoveEnd={(lat, lng) => setMapCenter([lat, lng])}
+        />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -370,34 +405,38 @@ export function FarmMap({
           updateInterval={120}
           crossOrigin
         />
-        {farms.map((farm) => (
-          <Marker
-            key={farm.id}
-            position={[farm.lat, farm.lng]}
-            icon={selectedFarmId === farm.id ? icons.active : icons.default}
-            eventHandlers={{
-              click: () => onFarmSelect(farm),
-            }}
-          >
-            <Popup>
-              <div className="p-1">
-                <h3 className="text-sm font-semibold text-foreground">{farm.name}</h3>
-                <p className="text-xs text-muted-foreground">{farm.distanceKm} km · ★ {farm.rating}</p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-        {userLocation && <Marker position={[userLocation.lat, userLocation.lng]} icon={icons.user} />}
+        {farms.map((farm) => {
+          const pair = farmIconsById.get(farm.id)
+          if (!pair) return null
+          return (
+            <Marker
+              key={farm.id}
+              position={[farm.lat, farm.lng]}
+              icon={selectedFarmId === farm.id ? pair.act : pair.def}
+              eventHandlers={{
+                click: () => onFarmSelect(farm),
+              }}
+            >
+              <Popup>
+                <div className="p-1">
+                  <h3 className="text-sm font-semibold text-foreground">{farm.name}</h3>
+                  <p className="text-xs text-muted-foreground">{farm.distanceKm} km · ★ {farm.rating}</p>
+                </div>
+              </Popup>
+            </Marker>
+          )
+        })}
+        {userLocation && <Marker position={[userLocation.lat, userLocation.lng]} icon={userMarkerIcon} />}
         {userLocation && (
           <Circle
             center={[userLocation.lat, userLocation.lng]}
             radius={distanceKm * 1000}
             pathOptions={{
-              color: "#3b82f6",
+              color: "rgba(71,85,105,0.55)",
               weight: 1.5,
-              opacity: 0.45,
-              fillColor: "#3b82f6",
-              fillOpacity: 0.06,
+              opacity: 0.55,
+              fillColor: "#cbd5e1",
+              fillOpacity: 0.18,
             }}
           />
         )}

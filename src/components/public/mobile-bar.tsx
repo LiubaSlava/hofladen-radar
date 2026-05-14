@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Search, Shield, Smartphone } from "lucide-react"
+import { ChevronDown, ChevronUp, Mail, Search, Shield, SlidersHorizontal, Smartphone } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
@@ -31,10 +31,17 @@ const UI_TEXT: Record<
     venuesAll: string
     venuesFarm: string
     venuesShop: string
+    categories: string
+    distance: string
     onlyOpenTitle: string
     onlyOpenAria: string
+    /** Kurz in der eingeklappten Filterzeile (z. B. „Offen“) */
+    onlyOpenShort: string
     searchPlaceholder: string
     distanceAria: string
+    filtersLabel: string
+    filtersToggleExpand: string
+    filtersToggleCollapse: string
   }
 > = {
   de: {
@@ -42,50 +49,80 @@ const UI_TEXT: Record<
     venuesAll: "Alle",
     venuesFarm: "Höfe",
     venuesShop: "Läden",
+    categories: "Kategorien",
+    distance: "Entfernung",
     onlyOpenTitle: "Nur geöffnete Hofläden",
     onlyOpenAria: "Nur geöffnete Hofläden anzeigen",
+    onlyOpenShort: "Offen",
     searchPlaceholder: "Hofladen suchen…",
     distanceAria: "Entfernung",
+    filtersLabel: "Suche & Filter",
+    filtersToggleExpand: "Filter einblenden",
+    filtersToggleCollapse: "Filter ausblenden",
   },
   fr: {
     venuesTitle: "Lieux",
     venuesAll: "Tous",
     venuesFarm: "Fermes",
     venuesShop: "Magasins",
+    categories: "Catégories",
+    distance: "Distance",
     onlyOpenTitle: "Seulement les fermes ouvertes",
     onlyOpenAria: "Afficher uniquement les fermes ouvertes",
+    onlyOpenShort: "Ouvert",
     searchPlaceholder: "Rechercher une ferme…",
     distanceAria: "Distance",
+    filtersLabel: "Recherche & filtres",
+    filtersToggleExpand: "Afficher les filtres",
+    filtersToggleCollapse: "Masquer les filtres",
   },
   it: {
     venuesTitle: "Luoghi",
     venuesAll: "Tutti",
     venuesFarm: "Fattorie",
     venuesShop: "Negozi",
+    categories: "Categorie",
+    distance: "Distanza",
     onlyOpenTitle: "Solo fattorie aperte",
     onlyOpenAria: "Mostra solo fattorie aperte",
+    onlyOpenShort: "Aperto",
     searchPlaceholder: "Cerca una fattoria…",
     distanceAria: "Distanza",
+    filtersLabel: "Ricerca e filtri",
+    filtersToggleExpand: "Mostra filtri",
+    filtersToggleCollapse: "Nascondi filtri",
   },
   en: {
     venuesTitle: "Locations",
     venuesAll: "All",
     venuesFarm: "Farms",
     venuesShop: "Shops",
+    categories: "Categories",
+    distance: "Distance",
     onlyOpenTitle: "Open farms only",
     onlyOpenAria: "Show open farms only",
+    onlyOpenShort: "Open",
     searchPlaceholder: "Search farm…",
     distanceAria: "Distance",
+    filtersLabel: "Search & filters",
+    filtersToggleExpand: "Show filters",
+    filtersToggleCollapse: "Hide filters",
   },
   uk: {
     venuesTitle: "Локації",
     venuesAll: "Усі",
     venuesFarm: "Ферми",
     venuesShop: "Магазини",
+    categories: "Категорії",
+    distance: "Відстань",
     onlyOpenTitle: "Лише відкриті ферми",
     onlyOpenAria: "Показувати лише відкриті ферми",
+    onlyOpenShort: "Відкр.",
     searchPlaceholder: "Шукати ферму…",
     distanceAria: "Відстань",
+    filtersLabel: "Пошук і фільтри",
+    filtersToggleExpand: "Показати фільтри",
+    filtersToggleCollapse: "Сховати фільтри",
   },
 }
 
@@ -155,22 +192,30 @@ export function MobileBar({
   onDistanceChange,
 }: MobileBarProps) {
   const [locale, setLocale] = useState<AppLocale>("de")
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const t = UI_TEXT[locale]
   const categoryLabels = CATEGORY_LABELS[locale]
+
+  const venueSummaryLabel =
+    venueFilter === "all" ? t.venuesAll : venueFilter === "farm" ? t.venuesFarm : t.venuesShop
+  const filtersSummary = `${distance} km · ${venueSummaryLabel}${onlyOpenNow ? ` · ${t.onlyOpenShort}` : ""}`
 
   useEffect(() => {
     setTimeout(() => setLocale(resolveInitialLocale()), 0)
     return subscribeAppLocale(setLocale)
   }, [])
 
+  const capsule =
+    "rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xl"
+
   return (
     <>
-      {/* Compact top island — brand, language, CTAs, search */}
-      <div className="notranslate pointer-events-auto fixed left-3 right-3 top-3 z-30 lg:hidden" translate="no">
-        <div className="rounded-[24px] border border-border/70 bg-card/95 p-2.5 shadow-[0_16px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-background">
+      {/* Top stack — logical capsules (desktop sidebar style) */}
+      <div className="notranslate pointer-events-auto fixed left-3 right-3 top-3 z-30 flex flex-col gap-2 lg:hidden" translate="no">
+        <section className={`${capsule} overflow-hidden p-0 ring-1 ring-primary/[0.07]`}>
+          <div className="border-b border-border/50 bg-brand-mint/60 px-3 py-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-sm">
                 <Image
                   src="/logo.png"
                   alt="Hofladen Radar"
@@ -180,130 +225,178 @@ export function MobileBar({
                   priority
                 />
               </div>
-              <h1 className="min-w-0 truncate text-sm font-semibold leading-none text-foreground">Hofladen Radar</h1>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <LanguageSwitcher value={locale} />
+              <h1 className="min-w-0 truncate text-sm font-semibold leading-tight text-primary">Hofladen Radar</h1>
             </div>
           </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <a
-              href="/datenschutz"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-0.5 text-center text-[10px] font-medium text-muted-foreground"
-            >
-              <Shield className="h-3 w-3" />
-              Datenschutz
-            </a>
-            <button
-              type="button"
-              disabled
-              title="Bald verfügbar"
-              className="inline-flex h-7 cursor-not-allowed items-center justify-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-0.5 text-center text-[10px] font-medium text-muted-foreground/70 opacity-80"
-            >
-              <Smartphone className="h-3 w-3" />
-              Android App
-            </button>
-            <EarlyAccessButton className="h-7 justify-center px-2 py-0.5 text-center text-[10px]" />
+          <div className="space-y-2 p-2.5">
+            <div className="rounded-2xl border border-border bg-muted p-1">
+              <LanguageSwitcher value={locale} variant="bare" />
+            </div>
+            <div className="flex gap-1 rounded-2xl border border-border bg-muted p-1">
+              <a
+                href="/datenschutz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+              >
+                <Shield className="h-3 w-3 shrink-0" />
+                <span className="truncate">Datenschutz</span>
+              </a>
+              <button
+                type="button"
+                disabled
+                title="Bald verfügbar"
+                aria-label="Android App herunterladen"
+                className="flex h-8 min-w-0 flex-1 cursor-not-allowed items-center justify-center rounded-xl text-muted-foreground/55 opacity-90"
+              >
+                <Smartphone className="h-3.5 w-3.5 shrink-0" />
+              </button>
+              <EarlyAccessButton
+                className="h-8 min-w-0 flex-1 rounded-xl border-0 bg-transparent px-0 text-muted-foreground hover:bg-accent hover:text-primary"
+                triggerContent={<Mail className="h-3.5 w-3.5" />}
+                ariaLabel="Früher Zugang"
+                title="Früher Zugang"
+              />
+            </div>
           </div>
+        </section>
 
-          <div className="relative mt-2">
+        <section className={`${capsule} p-2.5`}>
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t.searchPlaceholder}
-              className="h-9 w-full rounded-full border border-border/70 bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="h-9 w-full rounded-2xl border-0 bg-input pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/25"
             />
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* Bottom panel: filters card + product/category chips */}
+      {/* Bottom: collapsible filter stack (mobile) */}
       <div className="notranslate pointer-events-none fixed bottom-12 left-0 right-0 z-30 lg:hidden" translate="no">
         <div className="pointer-events-auto px-3">
-          <div className="rounded-[24px] border border-border/70 bg-card/95 p-2.5 shadow-[0_16px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-            <div className="px-0.5">
-              <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
-                <span>1 km</span>
-                <span className="tabular-nums text-foreground">{distance} km</span>
-                <span>20 km</span>
-              </div>
-              <Slider
-                min={1}
-                max={20}
-                step={1}
-                value={[distance]}
-                onValueChange={(values) => {
-                  const next = values[0]
-                  if (typeof next === "number") onDistanceChange(next)
-                }}
-                className="mt-1.5 w-full py-1.5"
-                aria-label={t.distanceAria}
-              />
-            </div>
-
-            <div className="notranslate mt-2 flex rounded-xl border border-border/70 bg-background/50 p-0.5" translate="no">
-              {(
-                [
-                  { value: "all" as const, label: t.venuesAll },
-                  { value: "farm" as const, label: t.venuesFarm },
-                  { value: "shop" as const, label: t.venuesShop },
-                ] as const
-              ).map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => onVenueFilterChange(value)}
-                  className={`flex-1 rounded-lg px-1.5 py-1.5 text-[10px] font-semibold transition-colors ${
-                    venueFilter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                  }`}
-                  aria-pressed={venueFilter === value}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div
-              className="notranslate mt-2 flex items-center justify-between gap-2 rounded-xl border border-border/70 bg-background/50 px-3 py-1.5"
-              translate="no"
+          <section className={`${capsule} overflow-hidden p-0`}>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((open) => !open)}
+              aria-expanded={filtersOpen}
+              aria-label={filtersOpen ? t.filtersToggleCollapse : t.filtersToggleExpand}
+              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
             >
-              <span className="min-w-0 truncate text-[11px] font-semibold text-foreground">{t.onlyOpenTitle}</span>
-              <Switch
-                checked={onlyOpenNow}
-                onCheckedChange={onOnlyOpenNowChange}
-                aria-label={t.onlyOpenAria}
-              />
-            </div>
-          </div>
-        </div>
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-foreground">{t.filtersLabel}</p>
+                <p className="truncate text-[10px] text-muted-foreground">{filtersSummary}</p>
+              </div>
+              {filtersOpen ? (
+                <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              ) : (
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              )}
+            </button>
 
-        <div
-          className="pointer-events-auto no-scrollbar notranslate mt-2 flex gap-2 overflow-x-auto px-3 py-1.5"
-          translate="no"
-        >
-          {CATEGORIES.map((cat) => {
-            const active = selectedCategories.includes(cat.key)
-            return (
-              <button
-                key={cat.key}
-                onClick={() => onToggleCategory(cat.key)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-xl transition-all ${
-                  active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border/70 bg-card/95 text-foreground"
-                }`}
-                aria-pressed={active}
-              >
-                <CategoryIcon category={cat.key} className="h-4 w-4" />
-                {categoryLabels[cat.key]}
-              </button>
-            )
-          })}
+            {filtersOpen ? (
+              <div className="space-y-2 border-t border-border/60 p-2.5 pt-2">
+                <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t.distance}
+                    </h2>
+                    <span className="tabular-nums text-xs font-medium text-foreground">{distance} km</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[10px] font-medium text-muted-foreground">
+                    <span>1 km</span>
+                    <span>20 km</span>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={[distance]}
+                    onValueChange={(values) => {
+                      const next = values[0]
+                      if (typeof next === "number") onDistanceChange(next)
+                    }}
+                    className="mt-1 w-full py-1.5"
+                    aria-label={t.distanceAria}
+                  />
+                </div>
+
+                <div className="notranslate rounded-xl border border-border/80 bg-muted/40 p-2.5" translate="no">
+                  <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t.venuesTitle}
+                  </h2>
+                  <div className="notranslate mt-2 flex rounded-xl border border-border bg-muted p-0.5" translate="no">
+                    {(
+                      [
+                        { value: "all" as const, label: t.venuesAll, emoji: "🗺️" },
+                        { value: "farm" as const, label: t.venuesFarm, emoji: "🚜" },
+                        { value: "shop" as const, label: t.venuesShop, emoji: "🧺" },
+                      ] as const
+                    ).map(({ value, label, emoji }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => onVenueFilterChange(value)}
+                        className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-semibold leading-tight transition-colors ${
+                          venueFilter === value
+                            ? "bg-accent text-primary shadow-sm"
+                            : "text-muted-foreground"
+                        }`}
+                        aria-pressed={venueFilter === value}
+                      >
+                        <span className="text-sm" aria-hidden>
+                          {emoji}
+                        </span>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`notranslate rounded-xl border border-border/80 bg-muted/40 p-2.5`} translate="no">
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted px-3 py-2">
+                    <span className="min-w-0 truncate text-[11px] font-semibold text-foreground">{t.onlyOpenTitle}</span>
+                    <Switch
+                      checked={onlyOpenNow}
+                      onCheckedChange={onOnlyOpenNowChange}
+                      aria-label={t.onlyOpenAria}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5">
+                  <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t.categories}
+                  </h2>
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
+                    {CATEGORIES.map((cat) => {
+                      const active = selectedCategories.includes(cat.key)
+                      return (
+                        <button
+                          key={cat.key}
+                          type="button"
+                          onClick={() => onToggleCategory(cat.key)}
+                          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold shadow-sm transition-all ${
+                            active
+                              ? "border-primary bg-accent text-primary"
+                              : "border-border bg-card text-foreground"
+                          }`}
+                          aria-pressed={active}
+                        >
+                          <CategoryIcon category={cat.key} className="text-base leading-none" />
+                          {categoryLabels[cat.key]}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </section>
         </div>
       </div>
     </>

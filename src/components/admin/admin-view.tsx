@@ -9,7 +9,9 @@ import type { Farm } from "@/lib/data"
 import { ReviewsTable, type AdminReview } from "@/components/admin/reviews-table"
 import { ReviewModal } from "@/components/admin/review-modal"
 import { AiSummaryPanel, type AiSummaryFormData } from "@/components/admin/ai-summary-panel"
+import { JsonFarmImportPanel } from "@/components/admin/json-farm-import-panel"
 import { getLatestAppApkUrl } from "@/lib/app-download"
+import { isPersistedFarmUuid } from "@/lib/farm-id"
 
 type FarmFormData = {
   id?: string
@@ -245,8 +247,9 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
   }
   const saveFarm = async (data: FarmFormData) => {
     const adminAuth = getAdminAuthHeader()
+    const updating = Boolean(data.id && isPersistedFarmUuid(data.id))
     const payload = {
-      id: data.id,
+      ...(updating ? { id: data.id } : {}),
       name: data.name,
       address: data.address,
       latitude: data.lat,
@@ -275,7 +278,7 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
       category: data.category,
     }
 
-    const method = data.id ? "PUT" : "POST"
+    const method = updating ? "PUT" : "POST"
     const response = await fetch("/api/admin/farms", {
       method,
       headers: { "Content-Type": "application/json", "x-admin-auth": adminAuth },
@@ -289,10 +292,20 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
     }
 
     setFarms((prev) => {
-      if (data.id) return prev.map((f) => (f.id === result.farm!.id ? result.farm! : f))
+      if (updating && data.id) return prev.map((f) => (f.id === data.id ? result.farm! : f))
       return [result.farm!, ...prev]
     })
     setModalOpen(false)
+  }
+
+  const openImportFarmInModal = (farm: Farm) => {
+    setActiveNav("hofladen")
+    setEditing(farm)
+    setModalOpen(true)
+  }
+
+  const onImportFarmPublished = (farm: Farm) => {
+    setFarms((prev) => [farm, ...prev])
   }
 
   const saveAiSummary = async (data: AiSummaryFormData) => {
@@ -320,6 +333,15 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
   }
 
   const headerCopy = useMemo(() => {
+    if (activeNav === "json-import") {
+      return {
+        eyebrow: "Daten",
+        title: "JSON-Import",
+        searchPlaceholder: "",
+        showSearch: false,
+        showCreate: false,
+      }
+    }
     if (activeNav === "ki-ueberblick") {
       return {
         eyebrow: "KI-Verwaltung",
@@ -414,6 +436,13 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
               totalCount={farms.length}
               savingId={aiSummarySavingId}
               onSave={saveAiSummary}
+            />
+          ) : activeNav === "json-import" ? (
+            <JsonFarmImportPanel
+              existingFarms={farms}
+              getAdminAuthHeader={getAdminAuthHeader}
+              onOpenInModal={openImportFarmInModal}
+              onPublished={onImportFarmPublished}
             />
           ) : activeNav === "app-verwaltung" ? (
             <div className="max-w-xl rounded-2xl border border-border bg-card p-5">
