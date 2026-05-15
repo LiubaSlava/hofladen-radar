@@ -6,6 +6,7 @@ import Image from "next/image"
 import { PRODUCT_LABELS, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
+import { BrandFooterActions } from "@/components/public/brand-footer-actions"
 import { DetailPanel } from "@/components/public/detail-panel"
 import { haversineDistanceKm } from "@/lib/geo"
 
@@ -149,7 +150,7 @@ export function RadarView({ farms }: RadarViewProps) {
       {/* Desktop distance pill (MobileBar is lg:hidden, so this keeps km visible on wide screens too) */}
       <div className="pointer-events-none fixed left-1/2 top-3 z-30 hidden -translate-x-1/2 lg:block">
         <div
-          className="notranslate rounded-full border border-border/80 bg-card/95 px-3 py-1 text-xs font-semibold tabular-nums text-foreground shadow-md backdrop-blur"
+          className="hr-pill font-pixel notranslate px-3 py-1.5 text-xs tabular-nums"
           translate="no"
         >
           {distance} km
@@ -195,7 +196,7 @@ export function RadarView({ farms }: RadarViewProps) {
       {/* Desktop list-mode overlay (only when no detail open) */}
       {viewMode === "list" && !selectedFarm && (
         <div className="pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-[0_14px_44px_rgba(13,61,40,0.12)] backdrop-blur-2xl lg:block">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          <h2 className="text-display text-lg font-extrabold tracking-tight text-foreground">
             Höfe in der Nähe
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -245,7 +246,7 @@ export function RadarView({ farms }: RadarViewProps) {
 
       {/* Footer signature */}
       <footer
-        className="notranslate pointer-events-none fixed bottom-2 left-2 z-20 flex items-center gap-1.5 text-left text-[10px] leading-tight text-gray-500 lg:left-1/2 lg:-translate-x-1/2 lg:text-center lg:text-xs"
+        className="notranslate pointer-events-auto fixed bottom-2 left-2 z-20 flex items-center gap-2 text-left text-[10px] leading-tight text-gray-500 lg:left-1/2 lg:-translate-x-1/2 lg:gap-2.5 lg:text-xs"
         translate="no"
       >
         <Image
@@ -258,10 +259,11 @@ export function RadarView({ farms }: RadarViewProps) {
           fetchPriority="low"
           className="h-4 w-4 shrink-0 rounded-full object-contain lg:h-5 lg:w-5"
         />
-        <div>
+        <div className="min-w-0 lg:text-center">
           <p>Entwickelt von AXON CREATIVE CH</p>
           <p>Made in Switzerland 🇨🇭</p>
         </div>
+        <BrandFooterActions className="shrink-0" />
       </footer>
     </div>
   )

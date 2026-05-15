@@ -72,7 +72,7 @@ export default async function HofPublicPage({ params }: PageProps) {
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60 bg-card/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-primary hover:underline">
+          <Link href="/" className="font-pixel text-sm leading-tight tracking-wide text-primary hover:underline">
             Hofladen Radar
           </Link>
           <Link
@@ -86,7 +86,7 @@ export default async function HofPublicPage({ params }: PageProps) {
 
       <article className="mx-auto max-w-3xl px-6 py-10">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{categoryLabel(farm.category)}</p>
-        <h1 className="mt-2 text-balance text-3xl font-semibold tracking-tight">{farm.name}</h1>
+        <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-foreground">{farm.name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{farm.address}</p>
 
         {farm.image ? (

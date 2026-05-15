@@ -1,7 +1,7 @@
 export default function DatenschutzPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10 text-foreground">
-      <h1 className="text-2xl font-semibold tracking-tight">Datenschutz</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Datenschutz</h1>
       <p className="mt-4 text-sm text-muted-foreground">
         Wir nehmen den Schutz Ihrer personenbezogenen Daten sehr ernst. Diese Website wird im
         "Free Zone"-Modell betrieben: Die Nutzung ist ohne Registrierung und ohne Benutzerkonto

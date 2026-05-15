@@ -1,21 +1,31 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { Inter, Geist_Mono } from 'next/font/google'
+import { JetBrains_Mono, Manrope, Silkscreen } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { absoluteMediaUrl, getPublicSiteOrigin } from '@/lib/site-url'
 import { BRAND_LOGO_SRC } from '@/lib/brand-assets'
 import './globals.css'
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
-  variable: '--font-ui',
+  variable: '--font-family-sans',
 })
 
-const geistMono = Geist_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-mono',
+  variable: '--font-family-mono',
+})
+
+/** Pixel / retro UI — digits, lang codes, search placeholder hint */
+const silkscreen = Silkscreen({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-family-pixel',
 })
 
 type SeoLocale = 'de' | 'en' | 'fr' | 'it' | 'uk'
@@ -158,7 +168,7 @@ export default async function RootLayout({
   return (
     <html
       lang={SEO_COPY[locale].htmlLang}
-      className={`${inter.variable} ${geistMono.variable} bg-background`}
+      className={`${manrope.variable} ${jetbrainsMono.variable} ${silkscreen.variable} bg-background`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased" suppressHydrationWarning>

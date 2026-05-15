@@ -3,12 +3,15 @@
 import dynamic from "next/dynamic"
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
-import { Star, MapPin, Sparkles, Leaf, Sprout } from "lucide-react"
+import { Star, MapPin, Leaf, Sparkles } from "lucide-react"
 import { PRODUCT_LABELS, type Farm } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { haversineDistanceKm } from "@/lib/geo"
 import { getPublicSiteOrigin } from "@/lib/site-url"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
+import { surfaceCapsule, surfaceCapsulePad } from "@/lib/typography"
+import { cn } from "@/lib/utils"
+import { FarmNavActionsBlock } from "@/components/public/farm-nav-actions-block"
 
 const FarmReviewsSection = dynamic(
   () => import("@/components/public/farm-reviews-section").then((mod) => mod.FarmReviewsSection),
@@ -55,14 +58,6 @@ const ACTION_ITEMS = [
   { key: "website", label: "Webseite" },
   { key: "share", label: "Teilen" },
 ] as const
-
-/** Emoji actions — same capsule strip as equipment / main panel. */
-const ACTION_EMOJI: Record<(typeof ACTION_ITEMS)[number]["key"], string> = {
-  route: "🧭",
-  contact: "📇",
-  website: "🌐",
-  share: "📤",
-}
 
 // Nearby attractions are meant to be a short walking add-on around the farm.
 const ATTRACTIONS_RADIUS_KM = 1
@@ -130,6 +125,8 @@ const LOCAL_TEXT: Record<
   {
     assortment: string
     equipment: string
+    venueFarm: string
+    venueShop: string
     openNow: string
     closedNow: string
     seasonNow: string
@@ -140,11 +137,16 @@ const LOCAL_TEXT: Record<
     attractionsNearby: string
     placeSingle: string
     placePlural: string
+    navKicker: string
+    navTitle: string
+    navHint: string
   }
 > = {
   de: {
     assortment: "Sortiment",
     equipment: "Ausstattung",
+    venueFarm: "Hof",
+    venueShop: "Laden",
     openNow: "Jetzt geöffnet",
     closedNow: "Derzeit geschlossen",
     seasonNow: "Jetzt Saison",
@@ -155,10 +157,15 @@ const LOCAL_TEXT: Record<
     attractionsNearby: "Ausflugsziele in der Nähe",
     placeSingle: "Ort",
     placePlural: "Orte",
+    navKicker: "Weg",
+    navTitle: "Kontakt & Navigation",
+    navHint: "Route planen, anrufen, Website öffnen oder Hof teilen.",
   },
   fr: {
     assortment: "Assortiment",
     equipment: "Équipement",
+    venueFarm: "Ferme",
+    venueShop: "Magasin",
     openNow: "Ouvert maintenant",
     closedNow: "Actuellement fermé",
     seasonNow: "En saison",
@@ -169,10 +176,15 @@ const LOCAL_TEXT: Record<
     attractionsNearby: "Destinations à proximité",
     placeSingle: "lieu",
     placePlural: "lieux",
+    navKicker: "Aller",
+    navTitle: "Contact & navigation",
+    navHint: "Itinéraire, appeler, site web ou partager la ferme.",
   },
   it: {
     assortment: "Assortimento",
     equipment: "Dotazione",
+    venueFarm: "Fattoria",
+    venueShop: "Negozio",
     openNow: "Aperto ora",
     closedNow: "Attualmente chiuso",
     seasonNow: "Di stagione ora",
@@ -183,10 +195,15 @@ const LOCAL_TEXT: Record<
     attractionsNearby: "Destinazioni nelle vicinanze",
     placeSingle: "luogo",
     placePlural: "luoghi",
+    navKicker: "Via",
+    navTitle: "Contatto & navigazione",
+    navHint: "Percorso, chiamata, sito web o condividi la fattoria.",
   },
   en: {
     assortment: "Assortment",
     equipment: "Features",
+    venueFarm: "Farm",
+    venueShop: "Shop",
     openNow: "Open now",
     closedNow: "Currently closed",
     seasonNow: "In season now",
@@ -197,10 +214,15 @@ const LOCAL_TEXT: Record<
     attractionsNearby: "Nearby attractions",
     placeSingle: "place",
     placePlural: "places",
+    navKicker: "Go",
+    navTitle: "Contact & navigation",
+    navHint: "Route, call, website, or share this farm.",
   },
   uk: {
     assortment: "Асортимент",
     equipment: "Оснащення",
+    venueFarm: "Ферма",
+    venueShop: "Магазин",
     openNow: "Зараз відкрито",
     closedNow: "Наразі зачинено",
     seasonNow: "Зараз сезон",
@@ -211,6 +233,9 @@ const LOCAL_TEXT: Record<
     attractionsNearby: "Цікаві місця поруч",
     placeSingle: "місце",
     placePlural: "місця",
+    navKicker: "Шлях",
+    navTitle: "Контакт і навігація",
+    navHint: "Маршрут, дзвінок, сайт або поділитися фермою.",
   },
 }
 
@@ -233,6 +258,7 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
   const featureLabels = LOCAL_FEATURE_LABELS[locale]
   const categoryLabels = LOCAL_CATEGORY_LABELS[locale]
   const actionLabels = LOCAL_ACTION_LABELS[locale]
+  const venueKicker = farm.category === "shop" ? t.venueShop : t.venueFarm
 
   useEffect(() => {
     setTimeout(() => setLocale(resolveInitialLocale()), 0)
@@ -380,11 +406,9 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
   }
 
   return (
-    <div className="space-y-3">
-      {/* Hero card — same capsule language as sidebar / detail shell */}
-      <article className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-sm ring-1 ring-primary/[0.06] backdrop-blur-xl">
-        {/* Hero image */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+    <div className="notranslate space-y-3" translate="no">
+      <article className={cn(surfaceCapsule, "overflow-hidden")}>
+        <div className="hr-farm-detail__hero relative aspect-[16/10] w-full overflow-hidden bg-muted">
           <Image
             src={heroImageSrc}
             alt={farm.name}
@@ -397,259 +421,221 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
           />
 
           {/* Top badges */}
-          <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
-            {farm.openNow && (
-              <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/95 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur-md">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
-                  <span className="relative h-2 w-2 rounded-full bg-primary" />
+          <div className="absolute left-3 right-3 top-3 z-10 flex items-start justify-between gap-2">
+            {farm.openNow ? (
+              <span className="hr-search-promo__badge font-pixel inline-flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-[oklch(88%_0.12_145)]" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-[oklch(88%_0.12_145)]" />
                 </span>
                 {t.openNow}
-              </div>
+              </span>
+            ) : (
+              <span />
             )}
 
-            <div className="ml-auto flex items-center gap-1 rounded-full border border-border/70 bg-card/95 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur-md">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+            <span className="hr-search-promo__badge font-pixel ml-auto inline-flex items-center gap-1">
+              <Star className="h-3 w-3 fill-amber-300 text-amber-200" />
               {farm.rating.toFixed(1)}
-            </div>
-          </div>
-
-          {/* Distance badge */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-border/70 bg-card/95 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-foreground shadow-sm backdrop-blur-md">
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-            {farm.distanceKm.toFixed(1)} km
-          </div>
-        </div>
-
-        {/* Title section */}
-        <div className="space-y-3 px-4 pt-4 md:px-5 md:pt-5">
-          <div>
-            <h2 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-foreground md:text-3xl">
-              {farm.name}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{farm.address}</p>
-            {contactPhoneRaw || contactEmailRaw ? (
-              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                {contactEmailRaw ? (
-                  <p>
-                    <span className="font-medium text-foreground">E-Mail: </span>
-                    <a href={`mailto:${contactEmailRaw}`} className="text-primary underline-offset-2 hover:underline">
-                      {contactEmailRaw}
-                    </a>
-                  </p>
-                ) : null}
-                {contactPhoneRaw ? (
-                  <p>
-                    <span className="font-medium text-foreground">Tel.: </span>
-                    <a href={`tel:${contactPhoneRaw.replace(/\s+/g, "")}`} className="text-primary underline-offset-2 hover:underline">
-                      {contactPhoneRaw}
-                    </a>
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            {farm.features.shop && (
-              <span className="rounded-full border border-primary/20 bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                Shop
-              </span>
-            )}
-            {farm.bio && (
-              <span className="flex items-center gap-1 rounded-full border border-primary/20 bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                <Leaf className="h-3 w-3" />
-                Bio
-              </span>
-            )}
-            <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-              {farm.openNow ? t.openNow : t.closedNow}
             </span>
           </div>
+
+          <span className="hr-search-promo__badge font-pixel absolute bottom-3 left-3 z-10 inline-flex items-center gap-1 tabular-nums">
+            <MapPin className="h-3 w-3 opacity-90" />
+            {farm.distanceKm.toFixed(1)} km
+          </span>
         </div>
 
-        {/* Product tags */}
-        <div className="px-4 pt-4 md:px-5 md:pt-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t.assortment}
-          </h3>
-          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {farm.products.slice(0, 5).map((product) => (
-              <div
-                key={product}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-muted/70 p-2.5 text-center transition-colors hover:border-primary/25"
-              >
-                <CategoryIcon category={product} className="text-lg leading-none" />
-                <span className="text-[10px] font-medium text-foreground">
-                  {categoryLabels[product]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Features — capsules like main panel (Standorte) */}
-        <div className="notranslate px-4 pt-4 md:px-5 md:pt-5" translate="no">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t.equipment}
-          </h3>
-          <div className="mt-3 rounded-2xl border border-border bg-muted p-1">
-            <div className="grid grid-cols-4 gap-1">
-              {localizedFeatureItems.map((feat) => {
-                const enabled = farm.features[feat.key]
-                return (
-                  <div
-                    key={feat.key}
-                    className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2.5 text-center transition-colors ${
-                      enabled
-                        ? "bg-accent text-primary shadow-sm"
-                        : "text-muted-foreground/55"
-                    }`}
-                  >
-                    <span className="select-none text-base leading-none" aria-hidden>
-                      {FEATURE_EMOJI[feat.key]}
-                    </span>
-                    <span className="text-[10px] font-semibold leading-tight">{feat.label}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Seasonal block */}
-        {farm.seasonal.length > 0 && (
-          <div className="px-4 pt-4 md:px-5 md:pt-5">
-            <div className="overflow-hidden rounded-2xl border border-border bg-muted/50 shadow-sm ring-1 ring-primary/[0.04]">
-              <div className="flex items-center gap-2 border-b border-border/60 bg-brand-butter/80 px-3 py-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-card/90">
-                  <Sprout className="h-4 w-4 text-brand-butter-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-brand-butter-foreground">{t.seasonNow}</h3>
-                  <p className="text-[11px] leading-snug text-muted-foreground">{t.seasonHint}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 p-3">
-                {farm.seasonal.map((item) => (
-                  <span
-                    key={item}
-                    className="flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground"
-                  >
-                    <Leaf className="h-3 w-3 text-muted-foreground" />
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action toolbar — capsules + emoji (design only; same handlers / disabled rules) */}
-        <div className="notranslate px-4 pt-4 md:px-5 md:pt-5" translate="no">
-          <div className="rounded-2xl border border-border bg-muted p-1">
-            <div className="grid grid-cols-4 gap-1">
-              {ACTION_ITEMS.map((action) => {
-                const primary = action.key === "route"
-                return (
-                  <button
-                    key={action.key}
-                    type="button"
-                    onClick={() => void handleActionClick(action.key)}
-                    disabled={
-                      (action.key === "contact" && !contactHref) ||
-                      (action.key === "website" && !websiteUrl)
-                    }
-                    className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2.5 text-center transition-all ${
-                      primary
-                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                        : "text-foreground hover:bg-accent hover:text-primary"
-                    } disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-foreground`}
-                  >
-                    <span
-                      className={`select-none text-base leading-none ${primary ? "" : "opacity-90"}`}
-                      aria-hidden
-                    >
-                      {ACTION_EMOJI[action.key]}
-                    </span>
-                    <span className="text-[10px] font-semibold leading-tight">{actionLabels[action.key]}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* AI Summary block */}
-        <div className="px-4 pt-4 md:px-5 md:pt-5">
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/[0.06]">
-            <div className="flex items-center gap-2 border-b border-border/60 bg-brand-mint/55 px-3 py-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card/80">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="min-w-0 text-sm font-semibold tracking-tight text-primary">{t.aiTitle}</h3>
-              <span className="ml-auto shrink-0 rounded-full border border-primary/20 bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                Beta
-              </span>
-            </div>
-            <div className="p-3">
-              <div className="rounded-xl border border-border/50 bg-muted/50 px-3 py-2.5">
-                <p className="text-sm leading-relaxed text-foreground">
-                  {localizedAiSummary || t.aiHint}
-                </p>
-              </div>
-              {!localizedAiSummary ? (
-                <div className="mt-3 flex items-center gap-1">
-                  <div className="h-1 w-12 animate-pulse rounded-full bg-muted-foreground/20" />
-                  <div className="h-1 w-8 animate-pulse rounded-full bg-muted-foreground/15 [animation-delay:120ms]" />
-                  <div className="h-1 w-5 animate-pulse rounded-full bg-muted-foreground/10 [animation-delay:240ms]" />
+        <div className="hr-search-promo hr-search-promo--no-orb hr-farm-detail__head">
+          <div className="hr-search-promo__glow" aria-hidden />
+          <div className="hr-search-promo__inner">
+            <div className="hr-search-promo__copy">
+              <span className="hr-search-promo__badge font-pixel">{venueKicker}</span>
+              <h2 className="hr-search-promo__title">{farm.name}</h2>
+              <p className="hr-search-promo__hint">{farm.address}</p>
+              {contactPhoneRaw || contactEmailRaw ? (
+                <div className="mt-2 space-y-1 text-[11px] leading-snug text-white">
+                  {contactEmailRaw ? (
+                    <p>
+                      E-Mail:{" "}
+                      <a href={`mailto:${contactEmailRaw}`} className="hr-farm-detail__promo-link">
+                        {contactEmailRaw}
+                      </a>
+                    </p>
+                  ) : null}
+                  {contactPhoneRaw ? (
+                    <p>
+                      Tel.:{" "}
+                      <a
+                        href={`tel:${contactPhoneRaw.replace(/\s+/g, "")}`}
+                        className="hr-farm-detail__promo-link"
+                      >
+                        {contactPhoneRaw}
+                      </a>
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {farm.features.shop ? <span className="hr-search-promo__badge font-pixel">Shop</span> : null}
+                {farm.bio ? (
+                  <span className="hr-search-promo__badge font-pixel inline-flex items-center gap-1">
+                    <Leaf className="h-2.5 w-2.5" aria-hidden />
+                    Bio
+                  </span>
+                ) : null}
+                <span className="hr-search-promo__badge font-pixel">
+                  {farm.openNow ? t.openNow : t.closedNow}
+                </span>
+              </div>
+              <div className="hr-search-promo__field mt-2.5 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                  {farm.rating.toFixed(1)}
+                </span>
+                <span className="font-pixel text-[10px] tabular-nums text-foreground">
+                  {farm.distanceKm.toFixed(1)} km
+                </span>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="px-4 pt-4 md:px-5 md:pt-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t.aboutFarm}
-          </h3>
-          <div className="mt-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2.5">
-            <p className="text-sm leading-relaxed text-foreground">{localizedDescription}</p>
-          </div>
-        </div>
-
-        {/* Reviews (Supabase + OAuth) */}
-        <div className="px-4 pb-4 pt-4 md:px-5 md:pb-5 md:pt-5">
-          <div className="rounded-2xl border border-border bg-muted/30 p-3 md:p-4">
-            <FarmReviewsSection farm={farm} />
           </div>
         </div>
       </article>
 
-      {/* Nearby attractions — clearer block at end of detail scroll */}
-      {nearbyAttractions.length > 0 && (
-        <section className="scroll-mt-6 space-y-3 overflow-hidden rounded-2xl border border-border bg-card/95 p-4 shadow-sm ring-1 ring-primary/[0.06] backdrop-blur-xl">
+      <section className={surfaceCapsulePad}>
+        <p className="font-pixel text-[11px] uppercase tracking-[0.1em] text-ink-3">{t.assortment}</p>
+        <div className="mt-3 hr-lang-panel hr-lang-panel--bare" role="group" aria-label={t.assortment}>
+          <div className="hr-lang-grid">
+            {farm.products.slice(0, 5).map((product) => (
+              <div
+                key={product}
+                className="hr-lang-card hr-lang-card--on"
+                aria-label={categoryLabels[product]}
+              >
+                <CategoryIcon category={product} className="hr-lang-card__icon" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={surfaceCapsulePad} translate="no">
+        <p className="font-pixel text-[11px] uppercase tracking-[0.1em] text-ink-3">{t.equipment}</p>
+        <div className="mt-3 hr-lang-panel hr-lang-panel--bare" role="group" aria-label={t.equipment}>
+          <div className="hr-lang-grid grid-cols-4">
+            {localizedFeatureItems.map((feat) => {
+              const enabled = farm.features[feat.key]
+              return (
+                <div
+                  key={feat.key}
+                  className={cn("hr-lang-card", enabled && "hr-lang-card--on", !enabled && "hr-lang-card--muted")}
+                  aria-label={feat.label}
+                >
+                  <span className="hr-lang-card__icon select-none" aria-hidden>
+                    {FEATURE_EMOJI[feat.key]}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+
+      {farm.seasonal.length > 0 ? (
+        <section className={surfaceCapsulePad}>
+          <p className="font-pixel text-[11px] uppercase tracking-[0.1em] text-ink-3">{t.seasonNow}</p>
+          <div className="mt-3 hr-saison overflow-hidden shadow-soft">
+            <p className="border-b border-[color-mix(in_oklch,var(--sand-2)_40%,white)] px-3 py-2 text-[11px] leading-snug text-ink-2">
+              {t.seasonHint}
+            </p>
+            <div className="flex flex-wrap gap-1.5 px-3 py-3">
+              {farm.seasonal.map((item) => (
+                <span key={item} className="hr-saison-pill inline-flex items-center gap-1">
+                  🌱 {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <FarmNavActionsBlock
+        kicker={t.navKicker}
+        title={t.navTitle}
+        hint={t.navHint}
+        routeLabel={actionLabels.route}
+        actionLabels={{
+          contact: actionLabels.contact,
+          website: actionLabels.website,
+          share: actionLabels.share,
+        }}
+        onActionClick={(key) => void handleActionClick(key)}
+        contactDisabled={!contactHref}
+        websiteDisabled={!websiteUrl}
+      />
+
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/[0.06] shrink-0">
+        <div className="flex items-center gap-2 border-b border-border/60 bg-brand-mint/55 px-3 py-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card/80">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </div>
+          <h3 className="min-w-0 text-sm font-semibold tracking-tight text-primary">{t.aiTitle}</h3>
+          <span className="ml-auto shrink-0 rounded-full border border-primary/20 bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Beta
+          </span>
+        </div>
+        <div className="bg-muted/35 px-3 py-3">
+          <p className="font-pixel text-xs leading-relaxed text-foreground text-pretty">
+            {localizedAiSummary || t.aiHint}
+          </p>
+          {!localizedAiSummary ? (
+            <div className="mt-3 flex items-center gap-1">
+              <div className="h-1 w-12 animate-pulse rounded-full bg-muted-foreground/20" />
+              <div className="h-1 w-8 animate-pulse rounded-full bg-muted-foreground/15 [animation-delay:120ms]" />
+              <div className="h-1 w-5 animate-pulse rounded-full bg-muted-foreground/10 [animation-delay:240ms]" />
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className={surfaceCapsulePad}>
+        <p className="font-pixel text-[11px] uppercase tracking-[0.1em] text-ink-3">{t.aboutFarm}</p>
+        <div className="mt-3 bg-muted/35 px-3 py-3">
+          <p className="text-sm leading-relaxed text-foreground text-pretty">{localizedDescription}</p>
+        </div>
+      </section>
+
+      <section className="notranslate" translate="no">
+        <FarmReviewsSection farm={farm} />
+      </section>
+
+      {nearbyAttractions.length > 0 ? (
+        <section className={cn(surfaceCapsulePad, "scroll-mt-6")}>
           <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">{t.attractionsNearby}</h3>
-            <span className="shrink-0 whitespace-nowrap rounded-full border border-primary/20 bg-accent px-2 py-0.5 text-xs font-medium text-primary">
+            <p className="font-pixel text-[11px] uppercase tracking-[0.1em] text-ink-3">{t.attractionsNearby}</p>
+            <span className="font-pixel shrink-0 rounded-full border border-primary/25 bg-accent px-2 py-0.5 text-[10px] tabular-nums text-primary">
               {nearbyAttractions.length} {nearbyAttractions.length === 1 ? t.placeSingle : t.placePlural}
             </span>
           </div>
-          <div className="space-y-3">
+          <div className="mt-3 space-y-2">
             {nearbyAttractions.map((attraction) => (
               <button
                 key={attraction.id}
                 type="button"
                 onClick={() => onSelectPoint?.(attraction.id)}
-                className="block w-full overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/40"
+                className="hr-venue-shop-row group flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-2 text-left transition-all"
               >
-                <div className="relative h-28 w-full overflow-hidden bg-muted">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted">
                   <Image
-                    src={brokenAttractionImages[attraction.id] ? "/placeholder.svg" : attraction.image || "/placeholder.svg"}
+                    src={
+                      brokenAttractionImages[attraction.id]
+                        ? "/placeholder.svg"
+                        : attraction.image || "/placeholder.svg"
+                    }
                     alt={attraction.name}
                     fill
-                    sizes="(max-width: 768px) 100vw, 420px"
+                    sizes="56px"
                     className="object-cover"
                     unoptimized
                     onError={() =>
@@ -659,17 +645,17 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
                     }
                   />
                 </div>
-                <div className="flex items-center justify-between gap-2 p-3">
-                  <p className="line-clamp-1 text-sm font-semibold text-foreground">{attraction.name}</p>
-                  <span className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p className="hr-venue-shop-row__name truncate text-sm font-medium">{attraction.name}</p>
+                  <p className="hr-venue-shop-row__meta mt-0.5 truncate text-xs">
                     {attraction.distanceKm.toFixed(1)} km
-                  </span>
+                  </p>
                 </div>
               </button>
             ))}
           </div>
         </section>
-      )}
+      ) : null}
     </div>
   )
 }

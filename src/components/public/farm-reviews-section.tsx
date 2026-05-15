@@ -1,15 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { Star } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser"
 import type { Farm } from "@/lib/data"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
 import { isPersistedFarmUuid } from "@/lib/farm-id"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 const UI_TEXT: Record<
   AppLocale,
@@ -28,6 +28,8 @@ const UI_TEXT: Record<
     enterReviewText: string
     enterName: string
     previewReviewsNote: string
+    cardTagline: string
+    cardFooter: string
   }
 > = {
   de: {
@@ -46,6 +48,8 @@ const UI_TEXT: Record<
     send: "Senden",
     enterReviewText: "Bitte schreibe einen Bewertungstext.",
     enterName: "Bitte gib deinen Namen ein.",
+    cardTagline: "Stimmen von Besucher:innen.",
+    cardFooter: "Ehrlich • Öffentlich • Für alle sichtbar",
   },
   fr: {
     unavailable: "Les avis sont indisponibles: configurez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY.",
@@ -63,6 +67,8 @@ const UI_TEXT: Record<
     send: "Envoyer",
     enterReviewText: "Veuillez saisir le texte de l'avis.",
     enterName: "Veuillez saisir votre nom.",
+    cardTagline: "La voix des visiteurs.",
+    cardFooter: "Honnête • Public • Visible par tous",
   },
   it: {
     unavailable: "Recensioni non disponibili: imposta NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.",
@@ -80,6 +86,8 @@ const UI_TEXT: Record<
     send: "Invia",
     enterReviewText: "Inserisci il testo della recensione.",
     enterName: "Inserisci il tuo nome.",
+    cardTagline: "Voci di chi ci visita.",
+    cardFooter: "Onesto • Pubblico • Visibile a tutti",
   },
   en: {
     unavailable: "Reviews are unavailable: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
@@ -96,6 +104,8 @@ const UI_TEXT: Record<
     send: "Send",
     enterReviewText: "Please enter review text.",
     enterName: "Please enter your name.",
+    cardTagline: "Voices from visitors.",
+    cardFooter: "Honest • Public • Visible to everyone",
   },
   uk: {
     unavailable: "Відгуки недоступні: задайте NEXT_PUBLIC_SUPABASE_URL і NEXT_PUBLIC_SUPABASE_ANON_KEY.",
@@ -113,6 +123,8 @@ const UI_TEXT: Record<
     send: "Надіслати",
     enterReviewText: "Напишіть текст відгуку.",
     enterName: "Вкажіть ваше ім'я.",
+    cardTagline: "Голос відвідувачів.",
+    cardFooter: "Чесно • Публічно • Бачать усі",
   },
 }
 
@@ -121,7 +133,6 @@ type ReviewRow = {
   farm_id: string
   author_name: string
   rating: number
-  /** Колонка БД `text` — текст отзыва (имя совместимо с Android). */
   text: string
   created_at: string
 }
@@ -132,6 +143,54 @@ function formatReviewDate(iso: string, locale: AppLocale): string {
   } catch {
     return iso
   }
+}
+
+function ReviewFarmCardShell({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("hr-review-farm-card notranslate", className)} translate="no">
+      <div className="hr-review-farm-card__glow hr-review-farm-card__glow--tr" aria-hidden />
+      <div className="hr-review-farm-card__glow hr-review-farm-card__glow--bl" aria-hidden />
+      <div className="hr-review-farm-card__inner">{children}</div>
+    </div>
+  )
+}
+
+function ReviewFarmCardHeader({
+  farmName,
+  averageRating,
+  reviewCount,
+  sectionTitle,
+  tagline,
+}: {
+  farmName: string
+  averageRating: number
+  reviewCount: number
+  sectionTitle: string
+  tagline: string
+}) {
+  const filledStars = Math.max(0, Math.min(5, Math.round(averageRating)))
+
+  return (
+    <>
+      <span className="hr-review-farm-card__badge font-pixel">✨ {sectionTitle}</span>
+      <div className="hr-review-farm-card__score">
+        <span className="hr-review-farm-card__score-prefix" aria-hidden>
+          ★
+        </span>
+        <span className="hr-review-farm-card__score-value font-pixel tabular-nums">{averageRating.toFixed(1)}</span>
+        <span className="hr-review-farm-card__score-suffix">
+          / 5 · <span className="font-pixel tabular-nums">({reviewCount})</span>
+        </span>
+      </div>
+      <p className="hr-review-farm-card__title">{farmName}</p>
+      <p className="mt-1 text-center text-[11px] font-medium text-[oklch(92%_0.02_140/0.82)]">{tagline}</p>
+      <div className="hr-review-farm-card__stars-pill" aria-hidden>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span key={i}>{i < filledStars ? "⭐" : "☆"}</span>
+        ))}
+      </div>
+    </>
+  )
 }
 
 interface FarmReviewsSectionProps {
@@ -237,14 +296,9 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
 
   if (!clientReady) {
     return (
-      <div className="space-y-3" aria-hidden>
-        <div className="flex items-center justify-between gap-2">
-          <div className="h-3 w-32 animate-pulse rounded-md bg-muted/70" />
-          <div className="h-3 w-14 animate-pulse rounded-md bg-muted/70" />
-        </div>
-        <div className="h-14 animate-pulse rounded-2xl bg-muted/50" />
-        <div className="h-20 animate-pulse rounded-2xl bg-muted/40" />
-      </div>
+      <ReviewFarmCardShell>
+        <div className="h-40 animate-pulse rounded-2xl bg-[oklch(100%_0_0/0.08)]" aria-busy="true" />
+      </ReviewFarmCardShell>
     )
   }
 
@@ -258,86 +312,83 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
 
   if (!isPersistedFarmUuid(farm.id)) {
     return (
-      <>
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.sectionTitle}</h3>
-          <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-foreground">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-            {farm.rating.toFixed(1)}
-            <span className="text-muted-foreground">(0)</span>
-          </span>
-        </div>
-        <p className="mt-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-          {t.previewReviewsNote}
-        </p>
-      </>
+      <ReviewFarmCardShell>
+        <ReviewFarmCardHeader
+          farmName={farm.name}
+          averageRating={farm.rating}
+          reviewCount={0}
+          sectionTitle={t.sectionTitle}
+          tagline={t.cardTagline}
+        />
+        <p className="hr-review-farm-card__footer mt-4">{t.previewReviewsNote}</p>
+      </ReviewFarmCardShell>
     )
   }
 
   return (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.sectionTitle}</h3>
-        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-foreground">
-          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-          {averageRating.toFixed(1)}
-          <span className="text-muted-foreground">({reviewCount})</span>
-        </span>
-      </div>
+      <ReviewFarmCardShell>
+        <ReviewFarmCardHeader
+          farmName={farm.name}
+          averageRating={averageRating}
+          reviewCount={reviewCount}
+          sectionTitle={t.sectionTitle}
+          tagline={t.cardTagline}
+        />
 
-      <div className="mt-3 rounded-2xl border border-border bg-muted p-3">
-        <div className="grid gap-3">
+        <div className="hr-review-farm-card__form">
           <div>
-            <p className="mb-1.5 text-xs font-medium text-foreground">{t.yourName}</p>
+            <p className="hr-review-farm-card__label">{t.yourName}</p>
             <Input
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
               placeholder={t.yourNamePlaceholder}
-              className="rounded-xl"
+              className="hr-review-farm-card__input"
             />
           </div>
           <div>
-            <p className="mb-1.5 text-xs font-medium text-foreground">{t.rating}</p>
-            <div className="flex gap-1">
+            <p className="hr-review-farm-card__label">{t.rating}</p>
+            <div className="flex justify-center gap-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setRating(n)}
-                  className="rounded-md p-1 transition-colors hover:bg-muted"
+                  className="hr-review-farm-card__star-btn"
                   aria-label={`${n} ${t.outOfFive}`}
                 >
                   <Star
-                    className={`h-6 w-6 ${n <= rating ? "fill-amber-400 text-amber-500" : "text-muted-foreground/40"}`}
+                    className={cn(
+                      "h-6 w-6",
+                      n <= rating ? "fill-amber-300 text-amber-200" : "text-[oklch(100%_0_0/0.35)]",
+                    )}
                   />
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-xs font-medium text-foreground">{t.text}</p>
+            <p className="hr-review-farm-card__label">{t.text}</p>
             <Textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
               rows={4}
               placeholder={t.textPlaceholder}
-              className="rounded-xl"
+              className="hr-review-farm-card__textarea"
             />
           </div>
-          {submitError ? <p className="text-xs text-destructive">{submitError}</p> : null}
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              onClick={() => void submitReview()}
-              disabled={submitting}
-              variant="secondary"
-              className="w-full rounded-2xl border border-border bg-secondary font-semibold text-foreground shadow-sm hover:bg-secondary/90"
-            >
-              {submitting ? t.sending : t.send}
-            </Button>
-          </div>
+          {submitError ? <p className="hr-review-farm-card__error">{submitError}</p> : null}
+          <button
+            type="button"
+            onClick={() => void submitReview()}
+            disabled={submitting}
+            className="hr-review-farm-card__cta"
+          >
+            → {submitting ? t.sending : t.send}
+          </button>
         </div>
-      </div>
+        <p className="hr-review-farm-card__footer">{t.cardFooter}</p>
+      </ReviewFarmCardShell>
 
       <div className="mt-3 space-y-2">
         {reviewsLoading ? (
@@ -347,7 +398,7 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
           </div>
         ) : reviews.length > 0 ? (
           reviews.map((review) => (
-            <div key={review.id} className="rounded-2xl border border-border/40 bg-card/80 p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+            <div key={review.id} className="hr-review-item">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
@@ -355,7 +406,9 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-foreground">{review.author_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{formatReviewDate(review.created_at, locale)}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatReviewDate(review.created_at, locale)}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5">
@@ -373,7 +426,6 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
           </div>
         )}
       </div>
-
     </>
   )
 }

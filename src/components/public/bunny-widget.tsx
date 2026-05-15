@@ -116,13 +116,13 @@ interface SpeechBubbleProps {
 function SpeechBubble({ tip, says, close, nextTip, onClose, onNext, tail, className }: SpeechBubbleProps) {
   return (
     <div className={cn("notranslate relative", className)} translate="no">
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/[0.06] backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-brand-mint/55 px-3 py-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">{says}</span>
+      <div className="hr-surface hr-surface-solid overflow-hidden shadow-[var(--shadow-soft)] ring-1 ring-primary/[0.06]">
+        <div className="hr-hopper-bubble__head flex items-center justify-between gap-2 border-b px-3 py-2">
+          <span className="hr-hopper-bubble__says font-pixel text-[11px] leading-none">{says}</span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="hr-hopper-bubble__close rounded-lg p-1.5 transition-colors"
             aria-label={close}
           >
             <X className="h-3.5 w-3.5" />

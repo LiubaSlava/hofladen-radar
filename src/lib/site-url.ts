@@ -18,7 +18,7 @@ export function getPublicSiteOrigin(): string {
 /** Absolute URL for OG / Twitter / previews. Pass site-relative path (`/logo.png`) or full `https://…`. */
 export function absoluteMediaUrl(href: string): string {
   const t = href.trim()
-  if (!t) return `${getPublicSiteOrigin()}/logo.png?v=7`
+  if (!t) return `${getPublicSiteOrigin()}/logo.png?v=8`
   if (t.startsWith("http://") || t.startsWith("https://") || t.startsWith("data:")) return t
   const base = getPublicSiteOrigin().replace(/\/+$/, "")
   const path = t.startsWith("/") ? t : `/${t}`

@@ -56,7 +56,7 @@ export function AdminSidebar({ active, onChange }: AdminSidebarProps) {
         </div>
         {!collapsed && (
           <div className="flex-1 overflow-hidden">
-            <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+            <p className="font-pixel truncate text-sm leading-tight tracking-wide text-foreground">
               Hofladen Radar
             </p>
             <p className="truncate text-[10px] text-muted-foreground">Admin Panel</p>

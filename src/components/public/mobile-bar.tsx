@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { ChevronDown, ChevronUp, Mail, Search, Shield, SlidersHorizontal, Smartphone } from "lucide-react"
+import { ChevronDown, ChevronUp, Languages, Search, SlidersHorizontal } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { LanguageSwitcher } from "@/components/public/language-switcher"
-import { EarlyAccessButton } from "@/components/public/early-access-button"
+import { getLocaleSummary, LanguageSwitcher } from "@/components/public/language-switcher"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
-
+import { cn } from "@/lib/utils"
+import { surfaceCapsule } from "@/lib/typography"
+import { VenueFilterBlock } from "@/components/public/venue-filter-block"
+import { HopperRabbitFace } from "@/components/graphics/hopper-rabbit-face"
+import { OpenFarmsToggleBlock } from "@/components/public/open-farms-toggle-block"
 interface MobileBarProps {
   searchQuery: string
   onSearchChange: (q: string) => void
@@ -38,11 +40,16 @@ const UI_TEXT: Record<
     onlyOpenAria: string
     /** Kurz in der eingeklappten Filterzeile (z. B. „Offen“) */
     onlyOpenShort: string
+    searchKicker: string
+    searchTitle: string
     searchPlaceholder: string
     distanceAria: string
     filtersLabel: string
     filtersToggleExpand: string
     filtersToggleCollapse: string
+    langLabel: string
+    langToggleExpand: string
+    langToggleCollapse: string
   }
 > = {
   de: {
@@ -55,11 +62,16 @@ const UI_TEXT: Record<
     onlyOpenTitle: "Nur geöffnete Hofläden",
     onlyOpenAria: "Nur geöffnete Hofläden anzeigen",
     onlyOpenShort: "Offen",
+    searchKicker: "Suche",
+    searchTitle: "Hofladen finden.",
     searchPlaceholder: "Hofladen suchen…",
     distanceAria: "Entfernung",
     filtersLabel: "Suche & Filter",
     filtersToggleExpand: "Filter einblenden",
     filtersToggleCollapse: "Filter ausblenden",
+    langLabel: "Sprache",
+    langToggleExpand: "Sprachen einblenden",
+    langToggleCollapse: "Sprachen ausblenden",
   },
   fr: {
     venuesTitle: "Lieux",
@@ -71,11 +83,16 @@ const UI_TEXT: Record<
     onlyOpenTitle: "Seulement les fermes ouvertes",
     onlyOpenAria: "Afficher uniquement les fermes ouvertes",
     onlyOpenShort: "Ouvert",
+    searchKicker: "Recherche",
+    searchTitle: "Trouver une ferme.",
     searchPlaceholder: "Rechercher une ferme…",
     distanceAria: "Distance",
     filtersLabel: "Recherche & filtres",
     filtersToggleExpand: "Afficher les filtres",
     filtersToggleCollapse: "Masquer les filtres",
+    langLabel: "Langue",
+    langToggleExpand: "Afficher les langues",
+    langToggleCollapse: "Masquer les langues",
   },
   it: {
     venuesTitle: "Luoghi",
@@ -87,11 +104,16 @@ const UI_TEXT: Record<
     onlyOpenTitle: "Solo fattorie aperte",
     onlyOpenAria: "Mostra solo fattorie aperte",
     onlyOpenShort: "Aperto",
+    searchKicker: "Cerca",
+    searchTitle: "Trova la fattoria.",
     searchPlaceholder: "Cerca una fattoria…",
     distanceAria: "Distanza",
     filtersLabel: "Ricerca e filtri",
     filtersToggleExpand: "Mostra filtri",
     filtersToggleCollapse: "Nascondi filtri",
+    langLabel: "Lingua",
+    langToggleExpand: "Mostra lingue",
+    langToggleCollapse: "Nascondi lingue",
   },
   en: {
     venuesTitle: "Locations",
@@ -103,11 +125,16 @@ const UI_TEXT: Record<
     onlyOpenTitle: "Open farms only",
     onlyOpenAria: "Show open farms only",
     onlyOpenShort: "Open",
+    searchKicker: "Search",
+    searchTitle: "Find a farm shop.",
     searchPlaceholder: "Search farm…",
     distanceAria: "Distance",
     filtersLabel: "Search & filters",
     filtersToggleExpand: "Show filters",
     filtersToggleCollapse: "Hide filters",
+    langLabel: "Language",
+    langToggleExpand: "Show languages",
+    langToggleCollapse: "Hide languages",
   },
   uk: {
     venuesTitle: "Локації",
@@ -119,11 +146,16 @@ const UI_TEXT: Record<
     onlyOpenTitle: "Лише відкриті ферми",
     onlyOpenAria: "Показувати лише відкриті ферми",
     onlyOpenShort: "Відкр.",
+    searchKicker: "Пошук",
+    searchTitle: "Знайти господарство.",
     searchPlaceholder: "Шукати ферму…",
     distanceAria: "Відстань",
     filtersLabel: "Пошук і фільтри",
     filtersToggleExpand: "Показати фільтри",
     filtersToggleCollapse: "Сховати фільтри",
+    langLabel: "Мова",
+    langToggleExpand: "Показати мови",
+    langToggleCollapse: "Сховати мови",
   },
 }
 
@@ -194,8 +226,10 @@ export function MobileBar({
 }: MobileBarProps) {
   const [locale, setLocale] = useState<AppLocale>("de")
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
   const t = UI_TEXT[locale]
   const categoryLabels = CATEGORY_LABELS[locale]
+  const langSummary = getLocaleSummary(locale)
 
   const venueSummaryLabel =
     venueFilter === "all" ? t.venuesAll : venueFilter === "farm" ? t.venuesFarm : t.venuesShop
@@ -206,15 +240,16 @@ export function MobileBar({
     return subscribeAppLocale(setLocale)
   }, [])
 
-  const capsule =
-    "rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xl"
+  const capsule = surfaceCapsule
 
   return (
-    <>
-      {/* Top stack — logical capsules (desktop sidebar style) */}
-      <div className="notranslate pointer-events-auto fixed left-3 right-3 top-3 z-30 flex flex-col gap-2 lg:hidden" translate="no">
+    <div
+      className="notranslate pointer-events-none fixed inset-x-3 top-3 bottom-12 z-30 flex flex-col gap-2 lg:hidden"
+      translate="no"
+    >
+      <div className="pointer-events-auto flex shrink-0 flex-col gap-2">
         <section className={`${capsule} overflow-hidden p-0 ring-1 ring-primary/[0.07]`}>
-          <div className="border-b border-border/50 bg-brand-mint/60 px-3 py-2.5">
+          <div className="border-b border-border/50 bg-card px-3 py-2.5">
             <div className="flex min-w-0 items-center gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-card shadow-sm">
                 <Image
@@ -226,60 +261,73 @@ export function MobileBar({
                   priority
                 />
               </div>
-              <h1 className="min-w-0 truncate text-sm font-semibold leading-tight text-primary">Hofladen Radar</h1>
+              <h1 className="font-pixel min-w-0 truncate text-sm leading-tight text-primary">Hofladen Radar</h1>
             </div>
           </div>
-          <div className="space-y-2 p-2.5">
-            <div className="rounded-2xl border border-border bg-muted p-1">
-              <LanguageSwitcher value={locale} variant="bare" />
-            </div>
-            <div className="flex gap-1 rounded-2xl border border-border bg-muted p-1">
-              <a
-                href="/datenschutz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
-              >
-                <Shield className="h-3 w-3 shrink-0" />
-                <span className="truncate">Datenschutz</span>
-              </a>
-              <button
-                type="button"
-                disabled
-                title="Bald verfügbar"
-                aria-label="Android App herunterladen"
-                className="flex h-8 min-w-0 flex-1 cursor-not-allowed items-center justify-center rounded-xl text-muted-foreground/55 opacity-90"
-              >
-                <Smartphone className="h-3.5 w-3.5 shrink-0" />
-              </button>
-              <EarlyAccessButton
-                className="h-8 min-w-0 flex-1 rounded-xl border-0 bg-transparent px-0 text-muted-foreground hover:bg-accent hover:text-primary"
-                triggerContent={<Mail className="h-3.5 w-3.5" />}
-                ariaLabel="Früher Zugang"
-                title="Früher Zugang"
-              />
-            </div>
+          <div className="border-t border-border/50">
+            <button
+              type="button"
+              onClick={() => setLangOpen((open) => !open)}
+              aria-expanded={langOpen}
+              aria-label={langOpen ? t.langToggleCollapse : t.langToggleExpand}
+              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+            >
+              <Languages className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-foreground">{t.langLabel}</p>
+                <p className="truncate text-[10px] text-muted-foreground">{langSummary}</p>
+              </div>
+              {langOpen ? (
+                <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              ) : (
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              )}
+            </button>
+            {langOpen ? (
+              <div className="border-t border-border/40 px-2.5 pb-2.5 pt-2">
+                <LanguageSwitcher value={locale} variant="bare" />
+              </div>
+            ) : null}
           </div>
         </section>
 
-        <section className={`${capsule} p-2.5`}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={t.searchPlaceholder}
-              className="h-9 w-full rounded-2xl border-0 bg-input pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/25"
-            />
+        <section className="hr-search-promo hr-search-promo--compact notranslate" translate="no">
+          <div className="hr-search-promo__glow" aria-hidden />
+          <div className="hr-search-promo__inner">
+            <div className="hr-search-promo__copy">
+              <span className="hr-search-promo__badge font-pixel">{t.searchKicker}</span>
+              <h2 className="hr-search-promo__title">{t.searchTitle}</h2>
+              <div className="hr-search-promo__field">
+                <Search className="hr-search-promo__field-icon" aria-hidden />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  aria-label={t.searchPlaceholder}
+                  className="hr-search-promo__input"
+                />
+              </div>
+            </div>
+            <div className="hr-search-promo__orb" aria-hidden>
+              <HopperRabbitFace className="hr-search-promo__mascot" />
+            </div>
           </div>
         </section>
       </div>
 
-      {/* Bottom: collapsible filter stack (mobile) */}
-      <div className="notranslate pointer-events-none fixed bottom-12 left-0 right-0 z-30 lg:hidden" translate="no">
-        <div className="pointer-events-auto px-3">
-          <section className={`${capsule} overflow-hidden p-0`}>
+      <div
+        className={cn(
+          "pointer-events-auto flex w-full min-h-0 flex-col",
+          filtersOpen ? "flex-1 overflow-hidden" : "mt-auto",
+        )}
+      >
+        <section
+          className={cn(
+            `${capsule} w-full overflow-hidden p-0`,
+            filtersOpen && "flex min-h-0 flex-1 flex-col",
+          )}
+        >
             <button
               type="button"
               onClick={() => setFiltersOpen((open) => !open)}
@@ -300,13 +348,13 @@ export function MobileBar({
             </button>
 
             {filtersOpen ? (
-              <div className="space-y-2 border-t border-border/60 p-2.5 pt-2">
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain border-t border-border/60 p-2.5 pt-2">
                 <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5">
                   <div className="flex items-center justify-between">
                     <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t.distance}
                     </h2>
-                    <span className="tabular-nums text-xs font-medium text-foreground">{distance} km</span>
+                    <span className="font-pixel tabular-nums text-xs text-foreground">{distance} km</span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[10px] font-medium text-muted-foreground">
                     <span>1 km</span>
@@ -326,54 +374,25 @@ export function MobileBar({
                   />
                 </div>
 
-                <div className="notranslate rounded-xl border border-border/80 bg-muted/40 p-2.5" translate="no">
-                  <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t.venuesTitle}
-                  </h2>
-                  <div className="notranslate mt-2 flex rounded-xl border border-border bg-muted p-0.5" translate="no">
-                    {(
-                      [
-                        { value: "all" as const, label: t.venuesAll, emoji: "🗺️" },
-                        { value: "farm" as const, label: t.venuesFarm, emoji: "🚜" },
-                        { value: "shop" as const, label: t.venuesShop, emoji: "🧺" },
-                      ] as const
-                    ).map(({ value, label, emoji }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => onVenueFilterChange(value)}
-                        className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-semibold leading-tight transition-colors ${
-                          venueFilter === value
-                            ? "bg-accent text-primary shadow-sm"
-                            : "text-muted-foreground"
-                        }`}
-                        aria-pressed={venueFilter === value}
-                      >
-                        <span className="text-sm" aria-hidden>
-                          {emoji}
-                        </span>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <VenueFilterBlock
+                  className="rounded-xl border border-border/80 bg-white/70 p-3 shadow-soft backdrop-blur-sm"
+                  venueFilter={venueFilter}
+                  onVenueFilterChange={onVenueFilterChange}
+                />
 
-                <div className={`notranslate rounded-xl border border-border/80 bg-muted/40 p-2.5`} translate="no">
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-muted px-3 py-2">
-                    <span className="min-w-0 truncate text-[11px] font-semibold text-foreground">{t.onlyOpenTitle}</span>
-                    <Switch
-                      checked={onlyOpenNow}
-                      onCheckedChange={onOnlyOpenNowChange}
-                      aria-label={t.onlyOpenAria}
-                    />
-                  </div>
-                </div>
+                <OpenFarmsToggleBlock
+                  compact
+                  onlyOpenNow={onlyOpenNow}
+                  onOnlyOpenNowChange={onOnlyOpenNowChange}
+                />
 
-                <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5">
-                  <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t.categories}
-                  </h2>
-                  <div className="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
+                <div
+                  className="hr-lang-panel hr-lang-panel--bare notranslate"
+                  translate="no"
+                  role="group"
+                  aria-label={t.categories}
+                >
+                  <div className="hr-lang-grid">
                     {CATEGORIES.map((cat) => {
                       const active = selectedCategories.includes(cat.key)
                       return (
@@ -381,15 +400,11 @@ export function MobileBar({
                           key={cat.key}
                           type="button"
                           onClick={() => onToggleCategory(cat.key)}
-                          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold shadow-sm transition-all ${
-                            active
-                              ? "border-primary bg-accent text-primary"
-                              : "border-border bg-card text-foreground"
-                          }`}
+                          className={cn("hr-lang-card", active && "hr-lang-card--on")}
                           aria-pressed={active}
+                          aria-label={categoryLabels[cat.key]}
                         >
-                          <CategoryIcon category={cat.key} className="text-base leading-none" />
-                          {categoryLabels[cat.key]}
+                          <CategoryIcon category={cat.key} className="hr-lang-card__icon" />
                         </button>
                       )
                     })}
@@ -397,9 +412,8 @@ export function MobileBar({
                 </div>
               </div>
             ) : null}
-          </section>
-        </div>
+        </section>
       </div>
-    </>
+    </div>
   )
 }

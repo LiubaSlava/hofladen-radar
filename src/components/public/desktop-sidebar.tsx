@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Search, Map, List, Shield, Smartphone, Mail } from "lucide-react"
+import { Search, Map, List } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
 import { LanguageSwitcher } from "@/components/public/language-switcher"
-import { EarlyAccessButton } from "@/components/public/early-access-button"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
-
+import { surfaceCapsule, surfaceCapsulePad } from "@/lib/typography"
+import { VenueFilterBlock } from "@/components/public/venue-filter-block"
+import { HopperRabbitFace } from "@/components/graphics/hopper-rabbit-face"
+import { OpenFarmsToggleBlock } from "@/components/public/open-farms-toggle-block"
+import { VenueListCard } from "@/components/public/venue-list-card"
+import { cn } from "@/lib/utils"
 interface DesktopSidebarProps {
   searchQuery: string
   onSearchChange: (q: string) => void
@@ -34,6 +37,9 @@ const UI_TEXT: Record<
   AppLocale,
   {
     subtitle: string
+    searchKicker: string
+    searchTitle: string
+    searchHint: string
     searchPlaceholder: string
     venuesTitle: string
     venuesHint: string
@@ -57,6 +63,9 @@ const UI_TEXT: Record<
 > = {
   de: {
     subtitle: "Frisch vom Hof, in der Nähe.",
+    searchKicker: "Suche",
+    searchTitle: "Hofladen finden.",
+    searchHint: "Name, Ort oder Produkt — live auf der Karte.",
     searchPlaceholder: "Hofladen oder Produkt suchen…",
     venuesTitle: "Standorte",
     venuesHint: "Alle Einträge, nur Bauernhöfe oder nur Läden anzeigen.",
@@ -79,6 +88,9 @@ const UI_TEXT: Record<
   },
   fr: {
     subtitle: "Directement de la ferme, tout près.",
+    searchKicker: "Recherche",
+    searchTitle: "Trouver une ferme.",
+    searchHint: "Nom, lieu ou produit — sur la carte.",
     searchPlaceholder: "Rechercher une ferme ou un produit…",
     venuesTitle: "Lieux",
     venuesHint: "Afficher toutes les entrées, seulement les fermes ou seulement les magasins.",
@@ -101,6 +113,9 @@ const UI_TEXT: Record<
   },
   it: {
     subtitle: "Fresco dalla fattoria, vicino a te.",
+    searchKicker: "Cerca",
+    searchTitle: "Trova la fattoria.",
+    searchHint: "Nome, luogo o prodotto — sulla mappa.",
     searchPlaceholder: "Cerca fattoria o prodotto…",
     venuesTitle: "Luoghi",
     venuesHint: "Mostra tutte le voci, solo fattorie o solo negozi.",
@@ -123,6 +138,9 @@ const UI_TEXT: Record<
   },
   en: {
     subtitle: "Fresh from local farms, nearby.",
+    searchKicker: "Search",
+    searchTitle: "Find a farm shop.",
+    searchHint: "Name, place or product — on the map.",
     searchPlaceholder: "Search farm or product…",
     venuesTitle: "Locations",
     venuesHint: "Show all entries, farms only, or shops only.",
@@ -145,6 +163,9 @@ const UI_TEXT: Record<
   },
   uk: {
     subtitle: "Свіже з ферми поруч.",
+    searchKicker: "Пошук",
+    searchTitle: "Знайти господарство.",
+    searchHint: "Назва, місце чи продукт — на мапі.",
     searchPlaceholder: "Шукати ферму або продукт…",
     venuesTitle: "Локації",
     venuesHint: "Показати всі точки, лише ферми або лише магазини.",
@@ -252,8 +273,8 @@ export function DesktopSidebar({
       translate="no"
     >
       {/* Brand + language — корпоративний шапковий блок як у решти капсул (mint band + muted toolbars) */}
-      <section className="shrink-0 overflow-hidden rounded-2xl border border-border bg-card/95 shadow-sm ring-1 ring-primary/[0.07] backdrop-blur-xl">
-        <div className="border-b border-border/50 bg-brand-mint/60 px-4 py-3.5">
+      <section className={`shrink-0 ${surfaceCapsule}`}>
+        <div className="border-b border-border/50 bg-card px-4 py-3.5">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-card shadow-sm">
               <Image
@@ -266,148 +287,84 @@ export function DesktopSidebar({
               />
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
-              <h1 className="text-[1.05rem] font-semibold leading-tight tracking-tight text-primary">Hofladen Radar</h1>
+              <h1 className="font-pixel text-[1.05rem] leading-tight text-primary">Hofladen Radar</h1>
               <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{t.subtitle}</p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-2 p-3">
-          <div className="rounded-2xl border border-border bg-muted p-1">
-            <LanguageSwitcher value={locale} variant="bare" />
-          </div>
-          <div className="flex gap-1 rounded-2xl border border-border bg-muted p-1">
-            <a
-              href="/datenschutz"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Datenschutz"
-              title="Datenschutz"
-              className="flex h-9 min-w-0 flex-1 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-            >
-              <Shield className="h-3.5 w-3.5" />
-            </a>
-            <button
-              type="button"
-              disabled
-              title="Bald verfügbar"
-              aria-label="Android App herunterladen"
-              className="flex h-9 min-w-0 flex-1 cursor-not-allowed items-center justify-center rounded-xl text-muted-foreground/55 opacity-90"
-            >
-              <Smartphone className="h-3.5 w-3.5" />
-            </button>
-            <EarlyAccessButton
-              className="h-9 min-w-0 flex-1 rounded-xl border-0 bg-transparent px-0 text-muted-foreground hover:bg-accent hover:text-primary"
-              triggerContent={<Mail className="h-3.5 w-3.5" />}
-              ariaLabel="Früher Zugang"
-              title="Früher Zugang"
-            />
-          </div>
+        <div className="px-3 pb-3 pt-2">
+          <LanguageSwitcher value={locale} variant="bare" />
         </div>
       </section>
 
       {/* Search */}
-      <section className="shrink-0 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur-xl">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            className="h-11 w-full rounded-2xl border-0 bg-input pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/25"
-          />
+      <section className="hr-search-promo notranslate shrink-0" translate="no">
+        <div className="hr-search-promo__glow" aria-hidden />
+        <div className="hr-search-promo__inner">
+          <div className="hr-search-promo__copy">
+            <span className="hr-search-promo__badge font-pixel">{t.searchKicker}</span>
+            <h2 className="hr-search-promo__title">{t.searchTitle}</h2>
+            <p className="hr-search-promo__hint">{t.searchHint}</p>
+            <div className="hr-search-promo__field">
+              <Search className="hr-search-promo__field-icon" aria-hidden />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                aria-label={t.searchPlaceholder}
+                className="hr-search-promo__input"
+              />
+            </div>
+          </div>
+          <div className="hr-search-promo__orb" aria-hidden>
+            <HopperRabbitFace className="hr-search-promo__mascot" />
+          </div>
         </div>
       </section>
 
-      {/* Standorte */}
-      <section className="notranslate shrink-0 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur-xl" translate="no">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.venuesTitle}</h2>
-        <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{t.venuesHint}</p>
-        <div className="mt-2 flex rounded-2xl border border-border bg-muted p-1">
-          <button
-            type="button"
-            onClick={() => onVenueFilterChange("all")}
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-semibold leading-tight transition-colors ${
-              venueFilter === "all" ? "bg-accent text-primary shadow-sm" : "text-muted-foreground"
-            }`}
-            aria-pressed={venueFilter === "all"}
-          >
-            <span className="text-sm" aria-hidden>
-              🗺️
-            </span>
-            {t.venuesAll}
-          </button>
-          <button
-            type="button"
-            onClick={() => onVenueFilterChange("farm")}
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-semibold leading-tight transition-colors ${
-              venueFilter === "farm" ? "bg-accent text-primary shadow-sm" : "text-muted-foreground"
-            }`}
-            aria-pressed={venueFilter === "farm"}
-          >
-            <span className="text-sm" aria-hidden>
-              🚜
-            </span>
-            {t.venuesFarm}
-          </button>
-          <button
-            type="button"
-            onClick={() => onVenueFilterChange("shop")}
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-semibold leading-tight transition-colors ${
-              venueFilter === "shop" ? "bg-accent text-primary shadow-sm" : "text-muted-foreground"
-            }`}
-            aria-pressed={venueFilter === "shop"}
-          >
-            <span className="text-sm" aria-hidden>
-              🧺
-            </span>
-            {t.venuesShop}
-          </button>
-        </div>
-      </section>
+      {/* Standorte / Locations */}
+      <VenueFilterBlock
+        className={`shrink-0 ${surfaceCapsulePad}`}
+        venueFilter={venueFilter}
+        onVenueFilterChange={onVenueFilterChange}
+      />
 
       {/* Categories */}
-      <section className="notranslate shrink-0 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur-xl" translate="no">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.categories}</h2>
-        <div className="mt-3 grid grid-cols-5 gap-2">
-          {CATEGORIES.map((cat) => {
-            const active = selectedCategories.includes(cat.key)
-            return (
-              <button
-                key={cat.key}
-                onClick={() => onToggleCategory(cat.key)}
-                className={`flex flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-all ${
-                  active
-                    ? "border-primary bg-accent text-primary"
-                    : "border-border bg-muted/80 text-muted-foreground hover:border-primary/25 hover:text-foreground"
-                }`}
-                aria-pressed={active}
-              >
-                <CategoryIcon category={cat.key} className="text-lg" />
-                <span className="text-[10px] font-medium">{categoryLabels[cat.key]}</span>
-              </button>
-            )
-          })}
+      <section className={`notranslate shrink-0 ${surfaceCapsulePad}`} translate="no">
+        <div className="hr-lang-panel hr-lang-panel--bare" role="group" aria-label={t.categories}>
+          <div className="hr-lang-grid">
+            {CATEGORIES.map((cat) => {
+              const active = selectedCategories.includes(cat.key)
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => onToggleCategory(cat.key)}
+                  className={cn("hr-lang-card", active && "hr-lang-card--on")}
+                  aria-pressed={active}
+                  aria-label={categoryLabels[cat.key]}
+                >
+                  <CategoryIcon category={cat.key} className="hr-lang-card__icon" />
+                </button>
+              )
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Nur geöffnet */}
-      <section className="notranslate shrink-0 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur-xl" translate="no">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted px-3.5 py-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-foreground">{t.onlyOpenTitle}</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{t.onlyOpenHint}</p>
-          </div>
-          <Switch checked={onlyOpenNow} onCheckedChange={onOnlyOpenNowChange} aria-label={t.onlyOpenAria} />
-        </div>
-      </section>
+      <OpenFarmsToggleBlock
+        className="shrink-0"
+        onlyOpenNow={onlyOpenNow}
+        onOnlyOpenNowChange={onOnlyOpenNowChange}
+      />
 
       {/* Entfernung */}
-      <section className="notranslate shrink-0 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur-xl" translate="no">
+      <section className={`notranslate shrink-0 ${surfaceCapsulePad}`} translate="no">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.distance}</h2>
-          <span className="tabular-nums text-xs font-medium text-foreground">{distance} km</span>
+          <span className="font-pixel tabular-nums text-xs text-foreground">{distance} km</span>
         </div>
         <Slider
           min={1}
@@ -428,7 +385,7 @@ export function DesktopSidebar({
       </section>
 
       {/* Karte / Liste */}
-      <section className="notranslate shrink-0 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur-xl" translate="no">
+      <section className={`notranslate shrink-0 ${surfaceCapsulePad}`} translate="no">
         <div className="flex rounded-2xl border border-border bg-muted p-1">
           <button
             onClick={() => onViewModeChange("map")}
@@ -459,7 +416,7 @@ export function DesktopSidebar({
         <div className="border-b border-border/70 pb-3">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-sm font-semibold leading-tight tracking-tight text-foreground">{t.nearby}</h2>
-            <span className="shrink-0 whitespace-nowrap rounded-full border border-primary/25 bg-accent px-2 py-0.5 text-[11px] font-semibold tabular-nums text-primary">
+            <span className="font-pixel shrink-0 whitespace-nowrap rounded-full border border-primary/25 bg-accent px-2 py-0.5 text-[11px] tabular-nums text-primary">
               {farms.length} {t.farmsCount}
             </span>
           </div>
@@ -467,33 +424,14 @@ export function DesktopSidebar({
         </div>
         <div className="mt-3 space-y-2">
           {farms.map((farm) => (
-            <button
+            <VenueListCard
               key={farm.id}
-              onClick={() => onSelectFarm(farm.id)}
-              className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
-                selectedFarmId === farm.id
-                  ? "border-primary bg-accent"
-                  : "border-border bg-muted/60 hover:border-primary/25"
-              }`}
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-brand-mint text-lg leading-none">
-                <span aria-hidden>{farm.category === "shop" ? "🧺" : "🚜"}</span>
-              </div>
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">{farm.name}</p>
-                  <span className="shrink-0 text-[10px] font-medium text-muted-foreground">{farm.distanceKm} km</span>
-                </div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <span
-                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${farm.openNow ? "bg-primary" : "bg-muted-foreground/40"}`}
-                  />
-                  <p className="truncate text-xs text-muted-foreground">
-                    {farm.openNow ? t.openNow : t.closed} · ★ {farm.rating}
-                  </p>
-                </div>
-              </div>
-            </button>
+              farm={farm}
+              selected={selectedFarmId === farm.id}
+              onSelect={() => onSelectFarm(farm.id)}
+              openNowLabel={t.openNow}
+              closedLabel={t.closed}
+            />
           ))}
           {farms.length === 0 && (
             <p className="rounded-2xl border border-dashed border-border/60 px-4 py-6 text-center text-xs text-muted-foreground">
