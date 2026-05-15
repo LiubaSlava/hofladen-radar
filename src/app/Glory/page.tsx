@@ -6,6 +6,8 @@ import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
+  title: "Administration | Hofladen Radar",
+  description: "Interner Verwaltungsbereich für Hofladen Radar — nicht öffentlich indexiert.",
   robots: { index: false, follow: false },
 }
 

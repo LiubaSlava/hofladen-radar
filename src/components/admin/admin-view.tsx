@@ -1,17 +1,39 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useEffect, useMemo, useState } from "react"
 import { Plus, Search, Store, Package, Users, TrendingUp, Smartphone } from "lucide-react"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { FarmsTable } from "@/components/admin/farms-table"
-import { FarmModal } from "@/components/admin/farm-modal"
 import type { Farm } from "@/lib/data"
 import { ReviewsTable, type AdminReview } from "@/components/admin/reviews-table"
-import { ReviewModal } from "@/components/admin/review-modal"
-import { AiSummaryPanel, type AiSummaryFormData } from "@/components/admin/ai-summary-panel"
-import { JsonFarmImportPanel } from "@/components/admin/json-farm-import-panel"
+import type { AiSummaryFormData } from "@/components/admin/ai-summary-panel"
 import { getLatestAppApkUrl } from "@/lib/app-download"
 import { isPersistedFarmUuid } from "@/lib/farm-id"
+
+const AiSummaryPanel = dynamic(
+  () => import("@/components/admin/ai-summary-panel").then((m) => m.AiSummaryPanel),
+  {
+    ssr: false,
+    loading: () => <div className="h-64 animate-pulse rounded-2xl bg-muted/40" aria-hidden />,
+  },
+)
+
+const JsonFarmImportPanel = dynamic(
+  () => import("@/components/admin/json-farm-import-panel").then((m) => m.JsonFarmImportPanel),
+  {
+    ssr: false,
+    loading: () => <div className="h-64 animate-pulse rounded-2xl bg-muted/40" aria-hidden />,
+  },
+)
+
+const FarmModal = dynamic(() => import("@/components/admin/farm-modal").then((m) => m.FarmModal), {
+  ssr: false,
+})
+
+const ReviewModal = dynamic(() => import("@/components/admin/review-modal").then((m) => m.ReviewModal), {
+  ssr: false,
+})
 
 type FarmFormData = {
   id?: string
@@ -605,21 +627,25 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
         </div>
       </main>
 
-      <FarmModal
-        key={editing?.id ?? "new-farm"}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={saveFarm}
-        initial={editing}
-        allFarms={farms}
-      />
+      {modalOpen ? (
+        <FarmModal
+          key={editing?.id ?? "new-farm"}
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSave={saveFarm}
+          initial={editing}
+          allFarms={farms}
+        />
+      ) : null}
 
-      <ReviewModal
-        open={reviewModalOpen}
-        initial={reviewEditing}
-        onClose={() => setReviewModalOpen(false)}
-        onSave={saveReview}
-      />
+      {reviewModalOpen && reviewEditing ? (
+        <ReviewModal
+          open={reviewModalOpen}
+          initial={reviewEditing}
+          onClose={() => setReviewModalOpen(false)}
+          onSave={saveReview}
+        />
+      ) : null}
     </div>
   )
 }

@@ -1,18 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import { ChevronDown, ChevronUp, Languages, Search, SlidersHorizontal } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
 import { getLocaleSummary, LanguageSwitcher } from "@/components/public/language-switcher"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
-import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
+import { BrandLogoMark } from "@/components/public/brand-logo-mark"
 import { cn } from "@/lib/utils"
 import { surfaceCapsule } from "@/lib/typography"
 import { VenueFilterBlock } from "@/components/public/venue-filter-block"
-import { HopperRabbitFace } from "@/components/graphics/hopper-rabbit-face"
+import dynamic from "next/dynamic"
+
+const HopperRabbitFace = dynamic(
+  () => import("@/components/graphics/hopper-rabbit-face").then((m) => m.HopperRabbitFace),
+  { ssr: false, loading: () => <span className="hr-search-promo__mascot block" aria-hidden /> },
+)
 import { OpenFarmsToggleBlock } from "@/components/public/open-farms-toggle-block"
 interface MobileBarProps {
   searchQuery: string
@@ -251,16 +255,7 @@ export function MobileBar({
         <section className={`${capsule} overflow-hidden p-0 ring-1 ring-primary/[0.07]`}>
           <div className="border-b border-border/50 bg-card px-3 py-2.5">
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-card shadow-sm">
-                <Image
-                  src={BRAND_LOGO_SRC}
-                  alt="Hofladen Radar"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-contain"
-                  priority
-                />
-              </div>
+              <BrandLogoMark size="sm" priority />
               <h1 className="font-pixel min-w-0 truncate text-sm leading-tight text-primary">Hofladen Radar</h1>
             </div>
           </div>

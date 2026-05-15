@@ -11,7 +11,15 @@ import { getPublicSiteOrigin } from "@/lib/site-url"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
 import { surfaceCapsule, surfaceCapsulePad } from "@/lib/typography"
 import { cn } from "@/lib/utils"
-import { FarmNavActionsBlock } from "@/components/public/farm-nav-actions-block"
+const FarmNavActionsBlock = dynamic(
+  () => import("@/components/public/farm-nav-actions-block").then((m) => m.FarmNavActionsBlock),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-28 animate-pulse rounded-2xl border border-border/50 bg-muted/30" aria-hidden />
+    ),
+  },
+)
 
 const FarmReviewsSection = dynamic(
   () => import("@/components/public/farm-reviews-section").then((mod) => mod.FarmReviewsSection),
@@ -636,6 +644,7 @@ export function FarmDetailCard({ farm, allPoints, onSelectPoint }: FarmDetailCar
                     alt={attraction.name}
                     fill
                     sizes="56px"
+                    loading="lazy"
                     className="object-cover"
                     unoptimized
                     onError={() =>

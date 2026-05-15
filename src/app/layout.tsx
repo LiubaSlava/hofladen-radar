@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { JetBrains_Mono, Manrope, Silkscreen } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { absoluteMediaUrl, getPublicSiteOrigin } from '@/lib/site-url'
 import { BRAND_LOGO_SRC } from '@/lib/brand-assets'
+import { SITE_ICONS } from '@/lib/site-icons'
 import './globals.css'
 
 const manrope = Manrope({
@@ -110,24 +110,8 @@ const SEO_COPY: Record<
   },
 }
 
-function detectSeoLocale(acceptLanguage: string | null): SeoLocale {
-  if (!acceptLanguage) return 'de'
-  const normalized = acceptLanguage.toLowerCase()
-  if (normalized.includes('fr')) return 'fr'
-  if (normalized.includes('it')) return 'it'
-  if (normalized.includes('en')) return 'en'
-  if (normalized.includes('uk')) return 'uk'
-  return 'de'
-}
-
-async function getSeoLocale(): Promise<SeoLocale> {
-  const requestHeaders = await headers()
-  return detectSeoLocale(requestHeaders.get('accept-language'))
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getSeoLocale()
-  const copy = SEO_COPY[locale]
+  const copy = SEO_COPY.de
   const site = getPublicSiteOrigin()
   const ogImage = absoluteMediaUrl(BRAND_LOGO_SRC)
   return {
@@ -150,12 +134,8 @@ export async function generateMetadata(): Promise<Metadata> {
       description: copy.description,
       images: [ogImage],
     },
-    generator: 'v0.app',
-    icons: {
-      icon: [{ url: BRAND_LOGO_SRC, sizes: 'any' }],
-      shortcut: BRAND_LOGO_SRC,
-      apple: BRAND_LOGO_SRC,
-    },
+    applicationName: 'Hofladen Radar',
+    icons: SITE_ICONS,
   }
 }
 
@@ -164,10 +144,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getSeoLocale()
   return (
     <html
-      lang={SEO_COPY[locale].htmlLang}
+      lang={SEO_COPY.de.htmlLang}
       className={`${manrope.variable} ${jetbrainsMono.variable} ${silkscreen.variable} bg-background`}
       suppressHydrationWarning
     >

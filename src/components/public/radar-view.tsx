@@ -6,9 +6,17 @@ import Image from "next/image"
 import { PRODUCT_LABELS, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
-import { BrandFooterActions } from "@/components/public/brand-footer-actions"
-import { DetailPanel } from "@/components/public/detail-panel"
 import { haversineDistanceKm } from "@/lib/geo"
+
+const DetailPanel = dynamic(
+  () => import("@/components/public/detail-panel").then((m) => m.DetailPanel),
+  { ssr: false, loading: () => null },
+)
+
+const BrandFooterActions = dynamic(
+  () => import("@/components/public/brand-footer-actions").then((m) => m.BrandFooterActions),
+  { ssr: false, loading: () => null },
+)
 
 interface RadarViewProps {
   farms: Farm[]
@@ -237,12 +245,14 @@ export function RadarView({ farms }: RadarViewProps) {
       )}
 
       {/* Detail panel — desktop drawer + mobile bottom sheet */}
-      <DetailPanel
-        farm={selectedFarm}
-        allPoints={allPointsWithDistance}
-        onClose={handleCloseDetail}
-        onSelectPoint={handleSelectById}
-      />
+      {selectedFarm ? (
+        <DetailPanel
+          farm={selectedFarm}
+          allPoints={allPointsWithDistance}
+          onClose={handleCloseDetail}
+          onSelectPoint={handleSelectById}
+        />
+      ) : null}
 
       {/* Footer signature */}
       <footer

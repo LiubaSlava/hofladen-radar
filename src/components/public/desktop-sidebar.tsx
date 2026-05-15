@@ -1,17 +1,21 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import { Search, Map, List } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
 import { LanguageSwitcher } from "@/components/public/language-switcher"
 import { resolveInitialLocale, subscribeAppLocale, type AppLocale } from "@/lib/ui-locale"
-import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
+import { BrandLogoMark } from "@/components/public/brand-logo-mark"
 import { surfaceCapsule, surfaceCapsulePad } from "@/lib/typography"
 import { VenueFilterBlock } from "@/components/public/venue-filter-block"
-import { HopperRabbitFace } from "@/components/graphics/hopper-rabbit-face"
+import dynamic from "next/dynamic"
+
+const HopperRabbitFace = dynamic(
+  () => import("@/components/graphics/hopper-rabbit-face").then((m) => m.HopperRabbitFace),
+  { ssr: false, loading: () => <span className="hr-search-promo__mascot block" aria-hidden /> },
+)
 import { OpenFarmsToggleBlock } from "@/components/public/open-farms-toggle-block"
 import { VenueListCard } from "@/components/public/venue-list-card"
 import { cn } from "@/lib/utils"
@@ -276,16 +280,7 @@ export function DesktopSidebar({
       <section className={`shrink-0 ${surfaceCapsule}`}>
         <div className="border-b border-border/50 bg-card px-4 py-3.5">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/15 bg-card shadow-sm">
-              <Image
-                src={BRAND_LOGO_SRC}
-                alt="Hofladen Radar"
-                width={80}
-                height={80}
-                className="h-full w-full object-contain"
-                priority
-              />
-            </div>
+            <BrandLogoMark priority />
             <div className="min-w-0 flex-1 pt-0.5">
               <h1 className="font-pixel text-[1.05rem] leading-tight text-primary">Hofladen Radar</h1>
               <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{t.subtitle}</p>

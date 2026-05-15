@@ -1,3 +1,13 @@
+import type { Metadata } from "next"
+import { SITE_ICONS } from "@/lib/site-icons"
+
+export const metadata: Metadata = {
+  title: "Datenschutz | Hofladen Radar",
+  description:
+    "Datenschutzerklärung von Hofladen Radar: Nutzung ohne Registrierung, minimale Datenverarbeitung, technisch notwendige Cookies und Ihre Rechte nach geltendem Datenschutzrecht.",
+  icons: SITE_ICONS,
+}
+
 export default function DatenschutzPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10 text-foreground">

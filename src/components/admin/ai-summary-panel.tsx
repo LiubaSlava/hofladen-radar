@@ -133,6 +133,7 @@ export function AiSummaryPanel({ farms, totalCount, savingId = null, onSave }: A
                     alt={selectedFarm.name}
                     fill
                     sizes="(max-width: 1200px) 100vw, 420px"
+                    loading="lazy"
                     className="object-cover"
                     unoptimized
                   />

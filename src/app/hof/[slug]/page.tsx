@@ -4,7 +4,9 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { fetchActiveFarmByPublicSlug } from "@/lib/fetch-public-farm-by-slug"
 import { absoluteMediaUrl, getPublicSiteOrigin } from "@/lib/site-url"
+import { BrandLogoMark } from "@/components/public/brand-logo-mark"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
+import { SITE_ICONS } from "@/lib/site-icons"
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [{ url: shareImage, alt: farm.name }],
     },
     twitter: { card: "summary_large_image", title, description, images: [shareImage] },
+    icons: SITE_ICONS,
   }
 }
 
@@ -72,8 +75,11 @@ export default async function HofPublicPage({ params }: PageProps) {
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60 bg-card/40 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
-          <Link href="/" className="font-pixel text-sm leading-tight tracking-wide text-primary hover:underline">
-            Hofladen Radar
+          <Link href="/" className="flex min-w-0 items-center gap-2.5 hover:opacity-90">
+            <BrandLogoMark size="sm" priority />
+            <span className="font-pixel truncate text-sm leading-tight tracking-wide text-primary">
+              Hofladen Radar
+            </span>
           </Link>
           <Link
             href="/"

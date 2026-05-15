@@ -18,6 +18,7 @@ export function AttractionCard({ attraction }: AttractionCardProps) {
           alt={attraction.name}
           fill
           sizes="(max-width: 768px) 100vw, 480px"
+          loading="lazy"
           className="object-cover"
         />
 
