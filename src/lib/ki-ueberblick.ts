@@ -2,6 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Farm } from "@/lib/data"
 import { mapSupabaseFarmRow, type SupabaseFarmRow } from "@/lib/farms-mapper"
 import { createSupabaseAdminServer } from "@/lib/supabase-admin-server"
+import { withTimeout } from "@/lib/with-timeout"
+
+const KI_UEBERBLICK_MS = 15_000
 
 export type KiUeberblickRow = {
   id?: string
@@ -43,7 +46,15 @@ export async function loadKiUeberblickMap(
       .in("farm_id", farmIds)
       .returns<KiUeberblickRow[]>()
 
-  const { data, error } = await runQuery(supabase)
+  let data: KiUeberblickRow[] | null = null
+  let error: { message?: string } | null = null
+  try {
+    const res = await withTimeout(runQuery(supabase), KI_UEBERBLICK_MS, "ki_ueberblick")
+    data = res.data
+    error = res.error
+  } catch {
+    return new Map()
+  }
 
   if (!error && data) {
     return new Map(data.map((row) => [row.farm_id, row]))
@@ -51,7 +62,15 @@ export async function loadKiUeberblickMap(
 
   const adminClient = createSupabaseAdminServer()
   if (adminClient && adminClient !== supabase) {
-    const { data: adminData, error: adminError } = await runQuery(adminClient)
+    let adminData: KiUeberblickRow[] | null = null
+    let adminError: { message?: string } | null = null
+    try {
+      const res = await withTimeout(runQuery(adminClient), KI_UEBERBLICK_MS, "ki_ueberblick admin")
+      adminData = res.data
+      adminError = res.error
+    } catch {
+      return new Map()
+    }
     if (!adminError && adminData) {
       return new Map(adminData.map((row) => [row.farm_id, row]))
     }
