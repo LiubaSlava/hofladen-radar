@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  /** No `X-Powered-By: Next.js` (unrelated to `<meta name="generator">`, but cleaner headers). */
+  poweredByHeader: false,
   /** Avoid infinite hang when Supabase is slow during `Collecting page data`. */
   staticPageGenerationTimeout: 180,
   typescript: {

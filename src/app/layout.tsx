@@ -1,158 +1,47 @@
-import type { Metadata } from 'next'
-import { JetBrains_Mono, Manrope, Silkscreen } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import { absoluteMediaUrl, getPublicSiteOrigin } from '@/lib/site-url'
-import { BRAND_LOGO_SRC } from '@/lib/brand-assets'
-import { SITE_ICONS } from '@/lib/site-icons'
-import './globals.css'
+import type { Metadata } from "next"
+import { JetBrains_Mono, Manrope, Silkscreen } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import { buildRootMetadata } from "@/lib/site-metadata"
+import "./globals.css"
 
 const manrope = Manrope({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-  variable: '--font-family-sans',
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-family-sans",
 })
 
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-  variable: '--font-family-mono',
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-family-mono",
 })
 
 /** Pixel / retro UI — digits, lang codes, search placeholder hint */
 const silkscreen = Silkscreen({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  display: 'swap',
-  variable: '--font-family-pixel',
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-family-pixel",
 })
 
-type SeoLocale = 'de' | 'en' | 'fr' | 'it' | 'uk'
+export const metadata: Metadata = buildRootMetadata()
 
-const SEO_COPY: Record<
-  SeoLocale,
-  {
-    htmlLang: string
-    openGraphLocale: string
-    title: string
-    description: string
-    keywords: string[]
-  }
-> = {
-  de: {
-    htmlLang: 'de',
-    openGraphLocale: 'de_CH',
-    title: 'Hofladen Radar — Hofläden und Bauernhöfe in deiner Nähe finden',
-    description:
-      'Interaktive Karte mit Hofläden, Bauernhöfen und Bauernmärkten in der Schweiz. Frische Produkte direkt vom Hof: Milch, Käse, Eier, Fleisch, Obst, Gemüse, Honig und Kräuter.',
-    keywords: [
-      'Hofladen Schweiz',
-      'Hofläden in der Nähe',
-      'Bauernhof Schweiz',
-      'Direktvermarktung Schweiz',
-      'Regionale Produkte',
-      'Milch Käse Eier Hofladen',
-    ],
-  },
-  en: {
-    htmlLang: 'en',
-    openGraphLocale: 'en_GB',
-    title: 'Hofladen Radar — Find farm shops and farms near you',
-    description:
-      'Interactive map of farm shops, farms and farmers markets in Switzerland. Fresh products straight from the farm: milk, cheese, eggs, meat, fruit, vegetables, honey and herbs.',
-    keywords: [
-      'farm shop Switzerland',
-      'farms near me',
-      'Swiss farm shop',
-      'regional products Switzerland',
-      'milk cheese eggs farm shop',
-    ],
-  },
-  fr: {
-    htmlLang: 'fr',
-    openGraphLocale: 'fr_CH',
-    title: 'Hofladen Radar — Trouver des magasins à la ferme et des fermes près de chez vous',
-    description:
-      'Carte interactive des magasins à la ferme, fermes et marchés paysans en Suisse. Produits frais directement de la ferme: lait, fromage, oeufs, viande, fruits, légumes, miel et herbes.',
-    keywords: [
-      'magasin à la ferme Suisse',
-      'fermes près de chez vous',
-      'produits régionaux Suisse',
-      'lait fromage oeufs ferme',
-    ],
-  },
-  it: {
-    htmlLang: 'it',
-    openGraphLocale: 'it_CH',
-    title: 'Hofladen Radar — Trova fattorie e negozi agricoli vicino a te',
-    description:
-      'Mappa interattiva di negozi agricoli, fattorie e mercati contadini in Svizzera. Prodotti freschi direttamente dalla fattoria: latte, formaggio, uova, carne, frutta, verdura, miele ed erbe.',
-    keywords: [
-      'negozio agricolo Svizzera',
-      'fattorie vicino a me',
-      'prodotti regionali Svizzera',
-      'latte formaggio uova fattoria',
-    ],
-  },
-  uk: {
-    htmlLang: 'uk',
-    openGraphLocale: 'uk_UA',
-    title: 'Hofladen Radar — Знайдіть ферми та фермерські магазини поруч',
-    description:
-      "Інтерактивна карта фермерських магазинів, ферм і фермерських ринків у Швейцарії. Свіжі продукти прямо з ферми: молоко, сир, яйця, м'ясо, фрукти, овочі, мед і трави.",
-    keywords: [
-      'фермерський магазин Швейцарія',
-      'ферми поруч',
-      'регіональні продукти Швейцарія',
-      'молоко сир яйця ферма',
-    ],
-  },
-}
-
-export async function generateMetadata(): Promise<Metadata> {
-  const copy = SEO_COPY.de
-  const site = getPublicSiteOrigin()
-  const ogImage = absoluteMediaUrl(BRAND_LOGO_SRC)
-  return {
-    metadataBase: new URL(site),
-    title: copy.title,
-    description: copy.description,
-    keywords: copy.keywords,
-    openGraph: {
-      type: 'website',
-      locale: copy.openGraphLocale,
-      url: site,
-      siteName: 'Hofladen Radar',
-      title: copy.title,
-      description: copy.description,
-      images: [{ url: ogImage, alt: "Hofladen Radar" }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: copy.title,
-      description: copy.description,
-      images: [ogImage],
-    },
-    applicationName: 'Hofladen Radar',
-    icons: SITE_ICONS,
-  }
-}
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
     <html
-      lang={SEO_COPY.de.htmlLang}
+      lang="de"
       className={`${manrope.variable} ${jetbrainsMono.variable} ${silkscreen.variable} bg-background`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )
