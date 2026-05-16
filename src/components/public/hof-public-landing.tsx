@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { CategoryIcon } from "@/components/category-icon"
 import { BrandLogoMark } from "@/components/public/brand-logo-mark"
+import { FarmReviewsSection } from "@/components/public/farm-reviews-section"
 import { HofPublicShareButton } from "@/components/public/hof-public-share-button"
 import { PRODUCT_LABELS, type CategoryKey, type Farm } from "@/lib/data"
 import {
@@ -109,7 +110,7 @@ export function HofPublicLanding({ farm }: HofPublicLandingProps) {
           </div>
         </section>
 
-        <div className="relative z-10 -mt-5 sm:-mt-6">
+        <div className="mt-4 sm:mt-5">
           <div className={cn(surfaceCapsule, "overflow-hidden ring-2 ring-primary/[0.08]")}>
             <div className="hr-farm-detail__hero relative aspect-[16/9] w-full overflow-hidden bg-muted sm:aspect-[16/10]">
               <Image
@@ -224,6 +225,10 @@ export function HofPublicLanding({ farm }: HofPublicLandingProps) {
               </div>
             </section>
           ) : null}
+
+          <section className="notranslate scroll-mt-6" translate="no">
+            <FarmReviewsSection farm={farm} />
+          </section>
 
           {hoursText ? (
             <section className={surfaceCapsulePad}>

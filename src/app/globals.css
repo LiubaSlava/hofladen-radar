@@ -1317,6 +1317,10 @@
   z-index: 0;
 }
 
+.leaflet-control-attribution {
+  display: none !important;
+}
+
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: var(--shadow-soft) !important;

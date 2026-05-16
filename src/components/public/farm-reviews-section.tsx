@@ -155,6 +155,14 @@ function ReviewFarmCardShell({ children, className }: { children: ReactNode; cla
   )
 }
 
+function ReviewsSectionSkeleton() {
+  return (
+    <ReviewFarmCardShell>
+      <div className="h-40 animate-pulse rounded-2xl bg-[oklch(100%_0_0/0.08)]" aria-busy="true" />
+    </ReviewFarmCardShell>
+  )
+}
+
 function ReviewFarmCardHeader({
   farmName,
   averageRating,
@@ -198,8 +206,8 @@ interface FarmReviewsSectionProps {
 }
 
 export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
-  const [supabase] = useState<SupabaseClient | null>(() => getSupabaseBrowserClient())
-  const [clientReady] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null)
   const [reviews, setReviews] = useState<ReviewRow[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
   const [rating, setRating] = useState(5)
@@ -238,17 +246,17 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
   }, [farm.id, supabase])
 
   useEffect(() => {
-    setTimeout(() => setLocale(resolveInitialLocale()), 0)
+    setSupabase(getSupabaseBrowserClient())
+    setLocale(resolveInitialLocale())
     const unsubscribe = subscribeAppLocale(setLocale)
+    setMounted(true)
     return unsubscribe
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadReviews()
-    }, 0)
-    return () => clearTimeout(timer)
-  }, [loadReviews])
+    if (!mounted) return
+    void loadReviews()
+  }, [loadReviews, mounted])
 
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return farm.rating
@@ -294,12 +302,8 @@ export function FarmReviewsSection({ farm }: FarmReviewsSectionProps) {
     await loadReviews()
   }
 
-  if (!clientReady) {
-    return (
-      <ReviewFarmCardShell>
-        <div className="h-40 animate-pulse rounded-2xl bg-[oklch(100%_0_0/0.08)]" aria-busy="true" />
-      </ReviewFarmCardShell>
-    )
+  if (!mounted) {
+    return <ReviewsSectionSkeleton />
   }
 
   if (!supabase) {

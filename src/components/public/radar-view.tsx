@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import Image from "next/image"
 import { PRODUCT_LABELS, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
+import { RadarSiteCredits } from "@/components/public/radar-site-credits"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 import { haversineDistanceKm } from "@/lib/geo"
 
@@ -256,7 +257,7 @@ export function RadarView({ farms }: RadarViewProps) {
 
       {/* Footer signature */}
       <footer
-        className="notranslate pointer-events-auto fixed bottom-2 left-2 z-20 flex items-center gap-2 text-left text-[10px] leading-tight text-gray-500 lg:left-1/2 lg:-translate-x-1/2 lg:gap-2.5 lg:text-xs"
+        className="notranslate pointer-events-auto fixed bottom-2 left-2 z-20 flex items-center gap-1.5 text-left leading-tight text-gray-500 lg:left-1/2 lg:-translate-x-1/2 lg:gap-2"
         translate="no"
       >
         <Image
@@ -269,10 +270,7 @@ export function RadarView({ farms }: RadarViewProps) {
           fetchPriority="low"
           className="h-4 w-4 shrink-0 rounded-full object-contain lg:h-5 lg:w-5"
         />
-        <div className="min-w-0 lg:text-center">
-          <p>Entwickelt von AXON CREATIVE CH</p>
-          <p>Made in Switzerland 🇨🇭</p>
-        </div>
+        <RadarSiteCredits />
         <BrandFooterActions className="shrink-0" />
       </footer>
     </div>
