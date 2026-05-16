@@ -78,7 +78,7 @@ export function DetailPanel({ farm, allPoints, onClose, onSelectPoint }: DetailP
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="no-scrollbar max-h-[calc(88vh-3rem)] overflow-y-auto px-3 pb-10 pt-0">
+        <div className="hr-scroll-pane no-scrollbar max-h-[calc(88vh-3rem)] overflow-y-auto px-3 pb-10 pt-0">
           <FarmDetailCard farm={farm} allPoints={allPoints} onSelectPoint={onSelectPoint} />
         </div>
       </aside>
@@ -100,7 +100,7 @@ export function DetailPanel({ farm, allPoints, onClose, onSelectPoint }: DetailP
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-10 pt-4">
+        <div className="hr-scroll-pane no-scrollbar flex-1 overflow-y-auto px-4 pb-10 pt-4">
           <FarmDetailCard farm={farm} allPoints={allPoints} onSelectPoint={onSelectPoint} />
         </div>
       </aside>

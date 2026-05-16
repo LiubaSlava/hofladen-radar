@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 import { CategoryIcon } from "@/components/category-icon"
 import { BrandLogoMark } from "@/components/public/brand-logo-mark"
-import { FarmReviewsSection } from "@/components/public/farm-reviews-section"
+import { HofPublicReviewsLazy } from "@/components/public/hof-public-reviews-lazy"
 import { HofPublicShareButton } from "@/components/public/hof-public-share-button"
 import { PRODUCT_LABELS, type CategoryKey, type Farm } from "@/lib/data"
 import {
@@ -227,7 +227,7 @@ export function HofPublicLanding({ farm }: HofPublicLandingProps) {
           ) : null}
 
           <section className="notranslate scroll-mt-6" translate="no">
-            <FarmReviewsSection farm={farm} />
+            <HofPublicReviewsLazy farm={farm} />
           </section>
 
           {hoursText ? (

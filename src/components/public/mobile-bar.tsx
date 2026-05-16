@@ -343,7 +343,7 @@ export function MobileBar({
             </button>
 
             {filtersOpen ? (
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain border-t border-border/60 p-2.5 pt-2">
+              <div className="hr-scroll-pane min-h-0 flex-1 space-y-2 overflow-y-auto border-t border-border/60 p-2.5 pt-2">
                 <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5">
                   <div className="flex items-center justify-between">
                     <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

@@ -189,6 +189,26 @@
     scroll-behavior: smooth;
     overflow-x: clip;
     font-family: var(--sans);
+    scroll-padding-top: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  .hr-scroll-pane {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scroll-padding-top: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hr-scroll-pane {
+      scroll-behavior: auto;
+    }
   }
 
   body {

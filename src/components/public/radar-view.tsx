@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import Image from "next/image"
 import { PRODUCT_LABELS, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
+import { DeferredBunnyWidget } from "@/components/public/deferred-bunny-widget"
 import { RadarSiteCredits } from "@/components/public/radar-site-credits"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 import { haversineDistanceKm } from "@/lib/geo"
@@ -61,11 +62,6 @@ const MobileBar = dynamic(() => import("@/components/public/mobile-bar").then((m
       aria-hidden
     />
   ),
-})
-
-const BunnyWidget = dynamic(() => import("@/components/public/bunny-widget").then((m) => m.BunnyWidget), {
-  ssr: false,
-  loading: () => null,
 })
 
 export function RadarView({ farms }: RadarViewProps) {
@@ -200,11 +196,11 @@ export function RadarView({ farms }: RadarViewProps) {
       />
 
       {/* Bunny widget */}
-      <BunnyWidget variant="desktop" />
+      <DeferredBunnyWidget variant="desktop" />
 
       {/* Desktop list-mode overlay (only when no detail open) */}
       {viewMode === "list" && !selectedFarm && (
-        <div className="pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-[0_14px_44px_rgba(13,61,40,0.12)] backdrop-blur-2xl lg:block">
+        <div className="hr-scroll-pane pointer-events-auto fixed bottom-6 left-[372px] right-6 top-6 z-30 hidden overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-[0_14px_44px_rgba(13,61,40,0.12)] backdrop-blur-2xl lg:block">
           <h2 className="text-display text-lg font-extrabold tracking-tight text-foreground">
             Höfe in der Nähe
           </h2>

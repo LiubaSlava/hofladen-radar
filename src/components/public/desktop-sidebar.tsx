@@ -273,7 +273,7 @@ export function DesktopSidebar({
 
   return (
     <aside
-      className="notranslate pointer-events-auto fixed left-4 top-4 z-40 hidden max-h-[calc(100vh-2rem)] w-[340px] flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-contain bg-transparent p-0 pb-3 shadow-none lg:flex"
+      className="hr-scroll-pane notranslate pointer-events-auto fixed left-4 top-4 z-40 hidden max-h-[calc(100vh-2rem)] w-[340px] flex-col gap-3 overflow-y-auto overflow-x-hidden bg-transparent p-0 pb-3 shadow-none lg:flex"
       translate="no"
     >
       {/* Brand + language — корпоративний шапковий блок як у решти капсул (mint band + muted toolbars) */}
