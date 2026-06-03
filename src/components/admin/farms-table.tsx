@@ -95,15 +95,25 @@ export function FarmsTable({ farms, onEdit, onToggleStatus, onDelete }: FarmsTab
                     className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       farm.status === "active"
                         ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground"
+                        : farm.status === "pending"
+                          ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+                          : "bg-muted text-muted-foreground"
                     }`}
                   >
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
-                        farm.status === "active" ? "bg-primary" : "bg-muted-foreground/60"
+                        farm.status === "active"
+                          ? "bg-primary"
+                          : farm.status === "pending"
+                            ? "bg-amber-500"
+                            : "bg-muted-foreground/60"
                       }`}
                     />
-                    {farm.status === "active" ? "Aktiv" : "Inaktiv"}
+                    {farm.status === "active"
+                      ? "Aktiv"
+                      : farm.status === "pending"
+                        ? "Wartend"
+                        : "Inaktiv"}
                   </button>
                 </td>
                 <td className="px-4 py-3.5">

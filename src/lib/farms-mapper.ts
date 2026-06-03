@@ -34,6 +34,9 @@ export type SupabaseFarmRow = {
   seo_title?: string | null
   seo_description?: string | null
   public_page_text?: string | null
+  submitter_name?: string | null
+  submitter_email?: string | null
+  submitted_at?: string | null
 }
 
 const CATEGORY_KEYS: readonly CategoryKey[] = [
@@ -232,7 +235,8 @@ export function mapSupabaseFarmRow(row: SupabaseFarmRow): Farm {
     rating: row.rating ?? 0,
     reviewCount: 0,
     openNow: deriveOpenNow(row.opening_hours, row.is_open),
-    status: row.status === "inactive" ? "inactive" : "active",
+    status:
+      row.status === "pending" ? "pending" : row.status === "inactive" ? "inactive" : "active",
     categories,
     products,
     hours: openingHoursToText(row.opening_hours),
@@ -270,5 +274,8 @@ export function mapSupabaseFarmRow(row: SupabaseFarmRow): Farm {
     seo_title: row.seo_title?.trim() || undefined,
     seo_description: row.seo_description?.trim() || undefined,
     public_page_text: row.public_page_text?.trim() || undefined,
+    submitter_name: row.submitter_name?.trim() || undefined,
+    submitter_email: row.submitter_email?.trim() || undefined,
+    submitted_at: row.submitted_at ?? undefined,
   }
 }

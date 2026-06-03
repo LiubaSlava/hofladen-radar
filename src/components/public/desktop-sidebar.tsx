@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Map, List } from "lucide-react"
+import Link from "next/link"
+import { Plus, Search, Map, List } from "lucide-react"
 import { CATEGORIES, type CategoryKey, type Farm, type VenueFilter } from "@/lib/data"
 import { CategoryIcon } from "@/components/category-icon"
 import { Slider } from "@/components/ui/slider"
@@ -288,8 +289,15 @@ export function DesktopSidebar({
           </div>
         </div>
 
-        <div className="px-3 pb-3 pt-2">
+        <div className="space-y-2 px-3 pb-3 pt-2">
           <LanguageSwitcher value={locale} variant="bare" />
+          <Link
+            href="/eintragen"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-primary/25 bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            Hof eintragen
+          </Link>
         </div>
       </section>
 

@@ -66,7 +66,7 @@ export interface Farm {
   rating: number
   reviewCount: number
   openNow: boolean
-  status: "active" | "inactive"
+  status: "active" | "inactive" | "pending"
   categories: CategoryKey[] // primary filter categories
   products: CategoryKey[] // broader list shown as tags inside the detail card
   hours: string
@@ -109,6 +109,9 @@ export interface Farm {
   seo_description?: string
   /** Extra copy shown on the public SEO page (plain text). */
   public_page_text?: string
+  submitter_name?: string | null
+  submitter_email?: string | null
+  submitted_at?: string | null
 }
 
 export interface Attraction {

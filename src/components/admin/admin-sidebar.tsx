@@ -13,12 +13,14 @@ import {
   Smartphone,
   Sparkles,
   FileJson2,
+  Inbox,
 } from "lucide-react"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "hofladen", label: "Hofladen", icon: Store },
+  { key: "einreichungen", label: "Einreichungen", icon: Inbox },
   { key: "json-import", label: "JSON-Import", icon: FileJson2 },
   { key: "ki-ueberblick", label: "KI-Überblick", icon: Sparkles },
   { key: "kommentare", label: "Kommentare", icon: MessageSquareText },

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
 import { HofPublicLanding } from "@/components/public/hof-public-landing"
+import { HofPublicNotFoundTrigger } from "@/components/public/hof-public-not-found-trigger"
 import { fetchActiveFarmByPublicSlug } from "@/lib/fetch-public-farm-by-slug"
 import { BRAND_LOGO_SRC } from "@/lib/brand-assets"
 import { buildPublicFarmCanonicalUrl } from "@/lib/hof-public-page"
@@ -48,7 +48,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function HofPublicPage({ params }: PageProps) {
   const { slug } = await params
   const farm = await fetchActiveFarmByPublicSlug(slug)
-  if (!farm) notFound()
+  if (!farm) {
+    return <HofPublicNotFoundTrigger />
+  }
 
   return <HofPublicLanding farm={farm} />
 }

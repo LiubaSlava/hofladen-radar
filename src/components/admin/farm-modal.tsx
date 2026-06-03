@@ -16,7 +16,7 @@ type FarmFormData = {
   lng: number
   hours: string
   categories: Farm["categories"]
-  status: Farm["status"]
+  status: "active" | "inactive" | "pending"
   category: "farm" | "shop" | "attraction"
   products: CategoryKey[]
   has_shop: boolean
@@ -80,7 +80,7 @@ export function FarmModal({ open, onClose, onSave, initial, allFarms = [] }: Far
   const [lng, setLng] = useState(String(initial?.lng ?? "13.405"))
   const [hours, setHours] = useState(initial?.hours ?? "Mo–Fr 8–18")
   const [stock, setStock] = useState<CategoryKey[]>(initial?.products ?? initial?.categories ?? [])
-  const [status, setStatus] = useState<"active" | "inactive">(initial?.status ?? "active")
+  const [status, setStatus] = useState<"active" | "inactive" | "pending">(initial?.status ?? "active")
   const [category, setCategory] = useState<"farm" | "shop" | "attraction">(initial?.category ?? "farm")
   const [products, setProducts] = useState<CategoryKey[]>(initial?.products ?? initial?.categories ?? [])
   const [hasShop, setHasShop] = useState(initial?.has_shop ?? initial?.features.shop ?? true)
@@ -506,14 +506,20 @@ export function FarmModal({ open, onClose, onSave, initial, allFarms = [] }: Far
             <div>
               <p className="text-sm font-medium text-foreground">Status</p>
               <p className="text-xs text-muted-foreground">
-                {status === "active" ? "Aktiv und sichtbar im Radar" : "Inaktiv, nur intern"}
+                {status === "active"
+                  ? "Aktiv und sichtbar im Radar"
+                  : status === "pending"
+                    ? "Wartet auf Freigabe — nicht auf der Karte"
+                    : "Inaktiv, nur intern"}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => setStatus((s) => (s === "active" ? "inactive" : "active"))}
+              onClick={() =>
+                setStatus((s) => (s === "active" ? (initial?.status === "pending" ? "pending" : "inactive") : "active"))
+              }
               className={`flex h-6 w-11 items-center rounded-full px-0.5 transition-colors ${
-                status === "active" ? "bg-primary" : "bg-muted"
+                status === "active" ? "bg-primary" : status === "pending" ? "bg-amber-500/70" : "bg-muted"
               }`}
               aria-pressed={status === "active"}
             >

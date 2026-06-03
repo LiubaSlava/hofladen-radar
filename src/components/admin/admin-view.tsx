@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Plus, Search, Store, Package, Users, TrendingUp, Smartphone } from "lucide-react"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { FarmsTable } from "@/components/admin/farms-table"
+import { SubmissionsTable } from "@/components/admin/submissions-table"
 import type { Farm } from "@/lib/data"
 import { ReviewsTable, type AdminReview } from "@/components/admin/reviews-table"
 import type { AiSummaryFormData } from "@/components/admin/ai-summary-panel"
@@ -43,7 +44,7 @@ type FarmFormData = {
   lng: number
   hours: string
   categories: Farm["categories"]
-  status: Farm["status"]
+  status: "active" | "inactive" | "pending"
   category: "farm" | "shop" | "attraction"
   products: Farm["products"]
   has_shop: boolean
@@ -98,6 +99,30 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
   const [appUploadBusy, setAppUploadBusy] = useState(false)
   const [appUploadMessage, setAppUploadMessage] = useState("")
   const [aiSummarySavingId, setAiSummarySavingId] = useState<string | null>(null)
+  const [submissions, setSubmissions] = useState<Farm[]>([])
+  const [submissionsLoading, setSubmissionsLoading] = useState(false)
+  const [submissionBusyId, setSubmissionBusyId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (activeNav !== "einreichungen") return
+    const load = async () => {
+      setSubmissionsLoading(true)
+      try {
+        const adminAuth = getAdminAuthHeader()
+        const response = await fetch("/api/admin/submissions", { headers: { "x-admin-auth": adminAuth } })
+        const result = (await response.json()) as { submissions?: Farm[]; error?: string }
+        if (!response.ok || !result.submissions) {
+          console.error("Fetch submissions failed:", result.error ?? "unknown")
+          setSubmissions([])
+          return
+        }
+        setSubmissions(result.submissions)
+      } finally {
+        setSubmissionsLoading(false)
+      }
+    }
+    void load()
+  }, [activeNav, farms])
 
   useEffect(() => {
     if (activeNav !== "kommentare") return
@@ -209,6 +234,7 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
   const filtered = useMemo(
     () =>
       farms.filter((f) => {
+        if (f.status === "pending") return false
         const matchesCategory = categoryFilter === "all" || f.category === categoryFilter
         const matchesSearch =
           f.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -217,6 +243,53 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
       }),
     [farms, search, categoryFilter],
   )
+
+  const pendingCount = useMemo(() => farms.filter((f) => f.status === "pending").length, [farms])
+
+  const approveSubmission = async (id: string) => {
+    setSubmissionBusyId(id)
+    try {
+      const adminAuth = getAdminAuthHeader()
+      const response = await fetch("/api/admin/submissions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-auth": adminAuth },
+        body: JSON.stringify({ id, action: "approve" }),
+      })
+      const result = (await response.json()) as { farm?: Farm; error?: string }
+      if (!response.ok || !result.farm) {
+        window.alert(result.error ?? "Freigabe fehlgeschlagen.")
+        return
+      }
+      setSubmissions((prev) => prev.filter((f) => f.id !== id))
+      setFarms((prev) => {
+        const without = prev.filter((f) => f.id !== id)
+        return [result.farm!, ...without]
+      })
+    } finally {
+      setSubmissionBusyId(null)
+    }
+  }
+
+  const rejectSubmission = async (id: string) => {
+    setSubmissionBusyId(id)
+    try {
+      const adminAuth = getAdminAuthHeader()
+      const response = await fetch("/api/admin/submissions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-auth": adminAuth },
+        body: JSON.stringify({ id, action: "reject" }),
+      })
+      const result = (await response.json()) as { ok?: boolean; error?: string }
+      if (!response.ok || !result.ok) {
+        window.alert(result.error ?? "Ablehnen fehlgeschlagen.")
+        return
+      }
+      setSubmissions((prev) => prev.filter((f) => f.id !== id))
+      setFarms((prev) => prev.filter((f) => f.id !== id))
+    } finally {
+      setSubmissionBusyId(null)
+    }
+  }
   const aiSummaryFiltered = useMemo(
     () =>
       farms.filter((f) => {
@@ -329,6 +402,9 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
       if (updating && data.id) return prev.map((f) => (f.id === data.id ? result.farm! : f))
       return [result.farm!, ...prev]
     })
+    if (result.farm.status !== "pending") {
+      setSubmissions((prev) => prev.filter((f) => f.id !== result.farm!.id))
+    }
     setModalOpen(false)
   }
 
@@ -382,6 +458,15 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
         title: "KI-Überblick",
         searchPlaceholder: "Hofladen suchen…",
         showSearch: true,
+        showCreate: false,
+      }
+    }
+    if (activeNav === "einreichungen") {
+      return {
+        eyebrow: "Community",
+        title: "Einreichungen",
+        searchPlaceholder: "",
+        showSearch: false,
         showCreate: false,
       }
     }
@@ -471,6 +556,27 @@ export function AdminView({ initialFarms = [] }: AdminViewProps) {
               savingId={aiSummarySavingId}
               onSave={saveAiSummary}
             />
+          ) : activeNav === "einreichungen" ? (
+            <>
+              <div className="mb-3">
+                <h2 className="text-sm font-semibold tracking-tight text-foreground">Von Nutzer:innen eingereicht</h2>
+                <p className="text-xs text-muted-foreground">
+                  {submissionsLoading
+                    ? "Lade…"
+                    : `${submissions.length} offen${pendingCount > submissions.length ? ` · ${pendingCount} gesamt wartend` : ""}`}
+                </p>
+              </div>
+              <SubmissionsTable
+                submissions={submissions}
+                busyId={submissionBusyId}
+                onEdit={(farm) => {
+                  setEditing(farm)
+                  setModalOpen(true)
+                }}
+                onApprove={(id) => void approveSubmission(id)}
+                onReject={(id) => void rejectSubmission(id)}
+              />
+            </>
           ) : activeNav === "json-import" ? (
             <JsonFarmImportPanel
               existingFarms={farms}
